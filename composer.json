@@ -1,0 +1,15 @@
+{
+    "name": "enmarche/mailer-bundle",
+    "license": "GPL-3.0",
+    "description": "Email bundle",
+    "type": "symfony-bundle",
+    "require": {
+        "php": ">=7.1",
+        "symfony/framework-bundle": "^4.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "EnMarche\\MailerBundle\\": "src"
+        }
+    }
+}
