@@ -4,24 +4,27 @@ namespace EnMarche\MailerBundle\Mail;
 
 interface MailInterface extends \JsonSerializable
 {
-    /**
-     * Returns the email's receivers.
-     *
-     * @return array
-     */
-    public function getReceivers(): array;
+    public function getRecipients(): array;
 
-    /**
-     * Returns the email's subject.
-     *
-     * @return string
-     */
+    public function setRecipients(array $recipients): self;
+
     public function getSubject(): string;
 
-    /**
-     * Returns the email's body content.
-     *
-     * @return string
-     */
-    public function getBody(): string;
+    public function setSubject(string $subject): self;
+
+    public function getFromName(): string;
+
+    public function setFromName(string $fromName): self;
+
+    public function getFromEmail(): string;
+
+    public function setFromEmail(string $fromEmail): self;
+
+    public function getTemplateKey(): string;
+
+    public function setTemplateKey(string $templateKey): self;
+
+    public function getTemplateVars(): array;
+
+    public function setTemplateVars(array $templateVars): self;
 }

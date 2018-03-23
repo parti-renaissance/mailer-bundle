@@ -6,5 +6,5 @@ use EnMarche\MailerBundle\Mail\MailInterface;
 
 interface MailProducerInterface
 {
-    public function scheduleEmail(MailInterface $mail): void;
+    public function schedule(MailInterface $mail, string $routingKey): void;
 }

@@ -4,20 +4,59 @@ namespace EnMarche\MailerBundle\Mail;
 
 class Mail implements MailInterface
 {
-    private $receivers;
-    private $subject;
-    private $body;
+    protected $fromName;
+    protected $fromEmail;
+    protected $templateKey;
+    protected $recipients;
+    protected $subject;
+    protected $templateVars = [];
 
-    public function __construct(array $receivers, string $subject, string $body)
+    public function getFromName(): string
     {
-        $this->receivers = $receivers;
-        $this->subject = $subject;
-        $this->body = $body;
+        return $this->fromName;
     }
 
-    public function getReceivers(): array
+    public function setFromName(string $fromName): MailInterface
     {
-        return $this->receivers;
+        $this->fromName = $fromName;
+
+        return $this;
+    }
+
+    public function getFromEmail(): string
+    {
+        return $this->fromEmail;
+    }
+
+    public function setFromEmail(string $fromEmail): MailInterface
+    {
+        $this->fromEmail = $fromEmail;
+
+        return $this;
+    }
+
+    public function getTemplateKey(): string
+    {
+        return $this->templateKey;
+    }
+
+    public function setTemplateKey(string $templateKey): MailInterface
+    {
+        $this->templateKey = $templateKey;
+
+        return $this;
+    }
+
+    public function getRecipients(): array
+    {
+        return $this->recipients;
+    }
+
+    public function setRecipients(array $recipients): MailInterface
+    {
+        $this->recipients = $recipients;
+
+        return $this;
     }
 
     public function getSubject(): string
@@ -25,17 +64,34 @@ class Mail implements MailInterface
         return $this->subject;
     }
 
-    public function getBody(): string
+    public function setSubject(string $subject): MailInterface
     {
-        return $this->body;
+        $this->subject = $subject;
+
+        return $this;
     }
 
-    public function jsonSerialize()
+    public function getTemplateVars(): array
+    {
+        return $this->templateVars;
+    }
+
+    public function setTemplateVars(array $templateVars): MailInterface
+    {
+        $this->templateVars = $templateVars;
+
+        return $this;
+    }
+
+    final public function jsonSerialize()
     {
         return [
-            'receivers' => $this->getReceivers(),
+            'fromName' => $this->getFromName(),
+            'fromEmail' => $this->getFromEmail(),
             'subject' => $this->getSubject(),
-            'body' => $this->getBody(),
+            'templateKey' => $this->getTemplateKey(),
+            'templateVars' => $this->getTemplateVars(),
+            'recipients' => $this->getRecipients(),
         ];
     }
 }

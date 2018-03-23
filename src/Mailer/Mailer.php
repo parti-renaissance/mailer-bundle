@@ -1,11 +1,11 @@
 <?php
 
-namespace EnMarche\MailerBundle\Manager;
+namespace EnMarche\MailerBundle\Mailer;
 
 use EnMarche\MailerBundle\Mail\MailInterface;
 use EnMarche\MailerBundle\Transporter\TransporterInterface;
 
-class MailManager
+class Mailer implements MailerInterface
 {
     private $transporter;
 

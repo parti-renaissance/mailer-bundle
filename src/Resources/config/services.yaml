@@ -8,11 +8,9 @@ services:
 
     enmarche.mailer.transporter.rmq: '@EnMarche\MailerBundle\Transporter\RabbitMQTransporter'
 
-    EnMarche\MailerBundle\Manager\MailManager:
+    EnMarche\MailerBundle\Mailer\Mailer:
         public: true
         arguments:
             - '@enmarche.mailer.transporter.default'
 
-
-
-
+    EnMarche\MailerBundle\Mail\MailBuilderInterface: '@EnMarche\MailerBundle\Mail\MailBuilder'
