@@ -83,7 +83,7 @@ class Mail implements MailInterface
         return $this;
     }
 
-    final public function jsonSerialize()
+    public function jsonSerialize()
     {
         return [
             'fromName' => $this->getFromName(),
