@@ -2,6 +2,7 @@
 
 namespace EnMarche\MailerBundle\DependencyInjection\Compiler;
 
+use EnMarche\MailerBundle\Transporter\TransporterInterface;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 
@@ -23,6 +24,6 @@ class AddTransporterPass implements CompilerPassInterface
             ->setArgument(0, $container->getDefinition($driverServiceId))
         ;
 
-        $container->addAliases(['enmarche.mailer.transporter.default' => $transporterServiceId]);
+        $container->addAliases([TransporterInterface::class => $transporterServiceId]);
     }
 }
