@@ -1,0 +1,21 @@
+<?xml version="1.0" ?>
+<container xmlns="http://symfony.com/schema/dic/services"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+    <services>
+        <!-- Client -->
+        <service id="en_marche_mailer.client.payload_factory.mailjet" class="EnMarche\MailerBundle\Client\PayloadFactory\MailjetPayloadFactory" public="false" />
+
+        <service id="en_marche_mailer.client.mail_clients_registry" class="EnMarche\MailerBundle\Client\MailClientsRegistry" public="false">
+            <!-- locator will be set by the extension -->
+        </service>
+        <service id="EnMarche\MailerBundle\Client\MailClientsRegistryInterface" alias="en_marche_mailer.client.mail_clients_registry" public="false" />
+
+        <service id="EnMarche\MailerBundle\Consumer\MailRequestConsumer">
+            <!-- mail request repository will be set in the extension -->
+            <!-- entity manager will be set in the extension -->
+            <!-- mail clients registry will be set in the extension -->
+            <!-- logger will be set in the extension -->
+        </service>
+    </services>
+</container>

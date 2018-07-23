@@ -3,7 +3,6 @@
 namespace EnMarche\MailerBundle\Mailer;
 
 use EnMarche\MailerBundle\Mail\MailInterface;
-use EnMarche\MailerBundle\Transporter\TransporterInterface;
 
 class Mailer implements MailerInterface
 {
@@ -16,6 +15,6 @@ class Mailer implements MailerInterface
 
     public function send(MailInterface $message): void
     {
-        $this->transporter->send($message);
+        $this->transporter->transport($message);
     }
 }
