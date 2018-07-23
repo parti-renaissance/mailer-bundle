@@ -1,0 +1,81 @@
+<?php
+
+namespace EnMarche\MailerBundle\Factory;
+
+use EnMarche\MailerBundle\Mail\ChunkableMailInterface;
+use EnMarche\MailerBundle\Mail\MailBuilder;
+use EnMarche\MailerBundle\Mail\MailInterface;
+use EnMarche\MailerBundle\Mail\Recipient;
+
+class MailFactory implements MailFactoryInterface
+{
+    private $cc;
+    private $bcc;
+
+    /**
+     * @param array[] $cc  Each array must contain at least the email, then the name
+     * @param array[] $bcc
+     */
+    public function __construct(array $cc = [], array $bcc = [])
+    {
+        foreach ($cc as $recipient) {
+            if (!is_array($recipient)) {
+                throw new \InvalidArgumentException(\sprintf('Expected an array, got %s.', \gettype($recipient)));
+            }
+
+            $this->cc[] = new Recipient(...$recipient);
+        }
+        foreach ($bcc as $recipient) {
+            if (!is_array($recipient)) {
+                throw new \InvalidArgumentException(\sprintf('Expected an array, got %s.', \gettype($recipient)));
+            }
+
+            $this->bcc[] = new Recipient(...$recipient);
+        }
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function createForClass(
+        string $mailClass,
+        array $to,
+        array $context,
+        $replyTo = null,
+        MailVarsFactoryInterface $varsFactory = null
+    ): MailInterface
+    {
+        if (!$varsFactory && !\is_subclass_of($mailClass, MailVarsFactoryInterface::class)) {
+            throw new \InvalidArgumentException(\sprintf('You must either pass a %s as third argument or let the mail class implements it.', MailVarsFactoryInterface::class));
+        }
+
+        $varsFactory = $varsFactory ?: $mailClass;
+        $builder = MailBuilder::create($mailClass);
+
+        foreach ($to as $recipient) {
+            $builder->addToRecipient($varsFactory::createRecipient($recipient, $context));
+        }
+
+        if (is_subclass_of($mailClass, ChunkableMailInterface::class)) {
+            if (!is_subclass_of($varsFactory, CampaignVarsFactoryInterface::class)) {
+                throw new \LogicException(\sprintf('The mail is of type campaign so the vars factory %s must implement %s.', \get_class($varsFactory), CampaignVarsFactoryInterface::class));
+            }
+
+            $builder->setTemplateVars($varsFactory::createTemplateVars($context));
+        } elseif (\count($builder->getToRecipients()) > 1) {
+            throw new \LogicException(\sprintf('The class %s is transactional but there is more than one recipient Have you extended the wrong mail class?.', $mailClass));
+        }
+
+        if ($this->cc) {
+            $builder->setCcRecipients($this->cc);
+        }
+        if ($this->bcc) {
+            $builder->setBccRecipients($this->bcc);
+        }
+        if ($replyTo) {
+            $builder->setReplyTo($varsFactory::createReplyTo($replyTo));
+        }
+
+        return $builder->getMail();
+    }
+}

@@ -4,5 +4,9 @@ namespace EnMarche\MailerBundle\Transporter;
 
 final class TransporterType
 {
-    public const RMQ = 'rmq';
+    public const AMQP = 'amqp';
+
+    public const CLASSES = [
+        self::AMQP => RabbitMQTransporter::class,
+    ];
 }

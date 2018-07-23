@@ -2,21 +2,56 @@
 
 namespace EnMarche\MailerBundle\Mail;
 
-interface MailBuilderInterface
+interface MailBuilderInterface extends MailInterface
 {
-    public function setMailClassName(string $mailClassName): self;
+    public function addToRecipient(RecipientInterface $recipient): self;
 
-    public function addRecipient(RecipientInterface $recipient): self;
+    public function removeToRecipient(RecipientInterface $recipient): self;
 
-    public function setRecipients(array $recipients): self;
+    /**
+     * @param RecipientInterface[] $recipients
+     */
+    public function setToRecipients(array $recipients): self;
 
-    public function setFromName(string $fromName): self;
+    /**
+     * @return RecipientInterface[] Previous recipients
+     */
+    public function resetToRecipients(): array;
 
-    public function setFromEmail(string $fromEmail): self;
+    public function addCcRecipient(RecipientInterface $recipient): self;
 
-    public function setTemplateKey(string $templateKey): self;
+    public function removeCcRecipient(RecipientInterface $recipient): self;
 
+    /**
+     * @param RecipientInterface[] $recipients
+     */
+    public function setCcRecipients(array $recipients): self;
+
+    public function addBccRecipient(RecipientInterface $recipient): self;
+
+    public function removeBccRecipient(RecipientInterface $recipient): self;
+
+    /**
+     * @param RecipientInterface[] $recipients
+     */
+    public function setBccRecipients(array $recipients): self;
+
+    public function setReplyTo(?RecipientInterface $recipient): self;
+
+    public function addTemplateVar(string $name, string $value): self;
+
+    public function removeTemplateVar(string $name): self;
+
+    /**
+     * @param string[] $templateVars
+     */
     public function setTemplateVars(array $templateVars): self;
 
-    public function build(): MailInterface;
+    /**
+     * This method should clear "to" recipients to prevent
+     * duplicates and ease sending chunks
+     */
+    public function getMail(): MailInterface;
+
+    public static function create(string $mailClass): self;
 }

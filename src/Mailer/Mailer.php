@@ -16,6 +16,6 @@ class Mailer implements MailerInterface
 
     public function send(MailInterface $message): void
     {
-        $this->transporter->send($message);
+        $this->transporter->schedule($message);
     }
 }

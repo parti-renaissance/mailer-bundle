@@ -4,67 +4,156 @@ namespace EnMarche\MailerBundle\Mail;
 
 use EnMarche\MailerBundle\Exception\InvalidMailClassException;
 
-class MailBuilder implements MailBuilderInterface
+class MailBuilder extends Mail implements MailBuilderInterface
 {
-    private $recipients = [];
-    private $templateVars = [];
-    private $fromName;
-    private $fromEmail;
-    private $mailClassName = Mail::class;
-    private $subject;
-    private $templateKey;
+    private $mailClass;
 
-    public function __construct(string $fromEmail = '', string $fromName = '')
+    /**
+     * {@inheritdoc}
+     */
+    public function addToRecipient(RecipientInterface $recipient): MailBuilderInterface
     {
-        $this->fromEmail = $fromEmail;
-        $this->fromName = $fromName;
-    }
-
-    public function setMailClassName(string $mailClassName): MailBuilderInterface
-    {
-        if (!is_a($mailClassName, MailInterface::class, true)) {
-            throw new InvalidMailClassException(
-                sprintf('Mail class "%s" must be one instance of "%s".', $mailClassName, MailInterface::class)
-            );
-        }
-
-        $this->mailClassName = $mailClassName;
+        $this->toRecipients[$recipient->getEmail()] = $recipient;
 
         return $this;
     }
 
-    public function setFromName(string $fromName): MailBuilderInterface
+    /**
+     * {@inheritdoc}
+     */
+    public function removeToRecipient(RecipientInterface $recipient): MailBuilderInterface
     {
-        $this->fromName = $fromName;
+        unset($this->toRecipients[$recipient->getEmail()]);
 
         return $this;
     }
 
-    public function setFromEmail(string $fromEmail): MailBuilderInterface
+    /**
+     * {@inheritdoc}
+     */
+    public function setToRecipients(array $recipients): MailBuilderInterface
     {
-        $this->fromEmail = $fromEmail;
-
-        return $this;
-    }
-
-    public function addRecipient(RecipientInterface $recipient): MailBuilderInterface
-    {
-        $this->recipients[] = $recipient;
-
-        return $this;
-    }
-
-    public function setRecipients(array $recipients): MailBuilderInterface
-    {
-        $this->recipients = [];
+        $this->toRecipients = [];
 
         foreach ($recipients as $recipient) {
-            $this->addRecipient($recipient);
+            $this->addToRecipient($recipient);
         }
 
         return $this;
     }
 
+    /**
+     * {@inheritdoc}
+     */
+    public function resetToRecipients(): array
+    {
+        $recipients = $this->toRecipients;
+        $this->toRecipients = [];
+
+        return $recipients;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function addCcRecipient(RecipientInterface $recipient): MailBuilderInterface
+    {
+        $this->ccRecipients[$recipient->getEmail()] = $recipient;
+
+        return $this;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function removeCcRecipient(RecipientInterface $recipient): MailBuilderInterface
+    {
+        unset($this->ccRecipients[$recipient->getEmail()]);
+
+        return $this;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function setCcRecipients(array $recipients): MailBuilderInterface
+    {
+        $this->ccRecipients = [];
+
+        foreach ($recipients as $recipient) {
+            $this->addCcRecipient($recipient);
+        }
+
+        return $this;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function addBccRecipient(RecipientInterface $recipient): MailBuilderInterface
+    {
+        $this->bccRecipients[$recipient->getEmail()] = $recipient;
+
+        return $this;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function removeBccRecipient(RecipientInterface $recipient): MailBuilderInterface
+    {
+        unset($this->bccRecipients[$recipient->getEmail()]);
+
+        return $this;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function setBccRecipients(array $recipients): MailBuilderInterface
+    {
+        $this->bccRecipients = [];
+
+        foreach ($recipients as $recipient) {
+            $this->addBccRecipient($recipient);
+        }
+
+        return $this;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function setReplyTo(?RecipientInterface $replyTo): MailBuilderInterface
+    {
+        $this->replyTo = $replyTo;
+
+        return $this;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function addTemplateVar(string $name, string $value): MailBuilderInterface
+    {
+        $this->templateVars[$name] = $value;
+
+        return $this;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function removeTemplateVar(string $name): MailBuilderInterface
+    {
+        unset($this->templateVars[$name]);
+
+        return $this;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function setTemplateVars(array $templateVars): MailBuilderInterface
     {
         $this->templateVars = $templateVars;
@@ -72,42 +161,29 @@ class MailBuilder implements MailBuilderInterface
         return $this;
     }
 
-    public function setTemplateKey(string $templateKey): MailBuilderInterface
+    /**
+     * {@inheritdoc}
+     */
+    public function getMail(): MailInterface
     {
-        $this->templateKey = $templateKey;
-
-        return $this;
+        return new $this->mailClass(
+            $this->resetToRecipients(),
+            $this->replyTo,
+            $this->ccRecipients,
+            $this->bccRecipients,
+            $this->templateVars
+        );
     }
 
-    public function build(): MailInterface
+    public static function create(string $mailClass = Mail::class): MailBuilderInterface
     {
-        /** @var MailInterface $mail */
-        $mail = new $this->mailClassName();
-        $mail->setRecipients($this->recipients);
-
-        if ($this->fromName) {
-            $mail->setFromName($this->fromName);
+        if (!is_subclass_of($mailClass, Mail::class)) {
+            throw new InvalidMailClassException($mailClass);
         }
 
-        if ($this->fromEmail) {
-            $mail->setFromEmail($this->fromEmail);
-        }
+        $builder = new self([]);
+        $builder->mailClass = $mailClass;
 
-        if ($this->subject) {
-            $mail->setSubject($this->subject);
-        }
-
-        if ($this->templateVars) {
-            $mail->setTemplateVars($this->templateVars);
-        }
-
-        if ($this->templateKey) {
-            $mail->setTemplateKey($this->templateKey);
-        }
-
-        // Clears the recipients after mail creation
-        $this->recipients = [];
-
-        return $mail;
+        return $builder;
     }
 }

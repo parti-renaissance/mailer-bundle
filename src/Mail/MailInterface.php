@@ -2,29 +2,47 @@
 
 namespace EnMarche\MailerBundle\Mail;
 
-interface MailInterface extends \JsonSerializable
+use Ramsey\Uuid\UuidInterface;
+
+interface MailInterface extends \Serializable
 {
-    public function getRecipients(): array;
+    /**
+     * @return RecipientInterface[]
+     */
+    public function getToRecipients(): array;
 
-    public function setRecipients(array $recipients): self;
+    /**
+     * @return RecipientInterface[]
+     */
+    public function getCcRecipients(): array;
 
-    public function getSubject(): string;
+    /**
+     * @return RecipientInterface[]
+     */
+    public function getBccRecipients(): array;
 
-    public function setSubject(string $subject): self;
+    public function getReplyTo(): ?RecipientInterface;
 
-    public function getFromName(): string;
-
-    public function setFromName(string $fromName): self;
-
-    public function getFromEmail(): string;
-
-    public function setFromEmail(string $fromEmail): self;
-
-    public function getTemplateKey(): string;
-
-    public function setTemplateKey(string $templateKey): self;
-
+    /**
+     * The common vars for campaign emails
+     *
+     * @return string[]
+     */
     public function getTemplateVars(): array;
 
-    public function setTemplateVars(array $templateVars): self;
+    public function getTemplateName(): string;
+
+    /**
+     * @return string One of Mail constants
+     */
+    public function getType(): string;
+
+    public function getChunkId(): ?UuidInterface;
+
+    /**
+     * Create clone containing the provided size of recipients.
+     *
+     * @return static[]|iterable Passing -1 means no chunk
+     */
+    public function chunk(int $size = -1): iterable;
 }

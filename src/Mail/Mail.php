@@ -2,96 +2,174 @@
 
 namespace EnMarche\MailerBundle\Mail;
 
+use Ramsey\Uuid\Uuid;
+use Ramsey\Uuid\UuidInterface;
+
 class Mail implements MailInterface
 {
-    protected $fromName;
-    protected $fromEmail;
-    protected $templateKey;
-    protected $recipients;
-    protected $subject;
-    protected $templateVars = [];
+    public const TYPE_CAMPAIGN = 'campaign';
+    public const TYPE_TRANSACTIONAL = 'transactional';
 
-    public function getFromName(): string
-    {
-        return $this->fromName;
+    public const DEFAULT_CHUNK_SIZE = 50;
+
+    protected $toRecipients;
+    protected $ccRecipients;
+    protected $bccRecipients;
+    protected $replyTo;
+    protected $templateVars;
+    protected $templateName;
+    protected $type;
+    protected $chunkId;
+
+    /**
+     * @param RecipientInterface[]|iterable $toRecipients
+     * @param RecipientInterface|null $replyTo
+     * @param RecipientInterface[]    $ccRecipients
+     * @param RecipientInterface[]    $bccRecipients
+     * @param string[]                $templateVars
+     */
+    final protected function __construct(
+        iterable $toRecipients,
+        RecipientInterface $replyTo = null,
+        array $ccRecipients = [],
+        array $bccRecipients = [],
+        array $templateVars = []
+    ) {
+        $this->toRecipients = $toRecipients;
+        $this->replyTo = $replyTo;
+        $this->ccRecipients = $ccRecipients;
+        $this->bccRecipients = $bccRecipients;
+        $this->templateVars = $templateVars;
     }
 
-    public function setFromName(string $fromName): MailInterface
+    /**
+     * {@inheritdoc}
+     */
+    final public function serialize()
     {
-        $this->fromName = $fromName;
+        // ensure the template key is resolved
+        $this->getTemplateName();
 
-        return $this;
+        return \preg_replace('/C:\d+:[a-zA-Z0-9_]+Mail:/', 'C:4:Mail:', \serialize(\get_object_vars($this)));
     }
 
-    public function getFromEmail(): string
+    /**
+     * {@inheritdoc}
+     */
+    final public function unserialize($serialized)
     {
-        return $this->fromEmail;
+        foreach (\unserialize($serialized) as $property => $value) {
+            $this->$property = $value;
+        }
     }
 
-    public function setFromEmail(string $fromEmail): MailInterface
+    /**
+     * {@inheritdoc}
+     */
+    final public function getToRecipients(): array
     {
-        $this->fromEmail = $fromEmail;
-
-        return $this;
+        return $this->toRecipients;
     }
 
-    public function getTemplateKey(): string
+    /**
+     * {@inheritdoc}
+     */
+    final public function getCcRecipients(): array
     {
-        return $this->templateKey;
+        return $this->ccRecipients;
     }
 
-    public function setTemplateKey(string $templateKey): MailInterface
+    /**
+     * {@inheritdoc}
+     */
+    final public function getBccRecipients(): array
     {
-        $this->templateKey = $templateKey;
-
-        return $this;
+        return $this->bccRecipients;
     }
 
-    public function getRecipients(): array
+    /**
+     * {@inheritdoc}
+     */
+    final public function getReplyTo(): ?RecipientInterface
     {
-        return $this->recipients;
+        return $this->replyTo;
     }
 
-    public function setRecipients(array $recipients): MailInterface
-    {
-        $this->recipients = $recipients;
-
-        return $this;
-    }
-
-    public function getSubject(): string
-    {
-        return $this->subject;
-    }
-
-    public function setSubject(string $subject): MailInterface
-    {
-        $this->subject = $subject;
-
-        return $this;
-    }
-
-    public function getTemplateVars(): array
+    /**
+     * {@inheritdoc}
+     */
+    final public function getTemplateVars(): array
     {
         return $this->templateVars;
     }
 
-    public function setTemplateVars(array $templateVars): MailInterface
+    /**
+     * Converts short class name to snake case.
+     */
+    final public function getTemplateName(): string
     {
-        $this->templateVars = $templateVars;
+        if ($this->templateName) {
+            return $this->templateName;
+        }
 
-        return $this;
+        $parts = \explode('\\', static::class);
+
+        return $this->templateName = \preg_replace_callback('/(^|[a-z])([A-Z])/', function (array $matches) {
+            return \strtolower(0 === \strlen($matches[1] ? $matches[2] : "{$matches[1]}_{$matches[2]}"));
+        }, \preg_replace('/Mail$/', '', \end($parts)));
     }
 
-    public function jsonSerialize()
+    final public function getType(): string
     {
-        return [
-            'fromName' => $this->getFromName(),
-            'fromEmail' => $this->getFromEmail(),
-            'subject' => $this->getSubject(),
-            'templateKey' => $this->getTemplateKey(),
-            'templateVars' => $this->getTemplateVars(),
-            'recipients' => $this->getRecipients(),
-        ];
+        return $this->type;
+    }
+
+    public function getChunkId(): ?UuidInterface
+    {
+        return $this->chunkId;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    final public function chunk(int $size = self::DEFAULT_CHUNK_SIZE): iterable
+    {
+        $chunk = 0;
+        $recipients = [];
+
+        foreach ($this->toRecipients as $recipient) {
+            $recipients[] = $recipient;
+            $chunk++;
+
+            if (0 === $chunk % $size) {
+                yield $this->createChunk($recipients);
+
+                $recipients = [];
+            }
+        }
+
+        if ($recipients) {
+            yield $this->createChunk($recipients);
+        }
+    }
+
+    /**
+     * @param RecipientInterface[] $recipients
+     */
+    private function createChunk(array $recipients): MailInterface
+    {
+        if (!$this->chunkId) {
+            $this->chunkId = Uuid::uuid4();
+            $this->getTemplateName(); // ensure the template name is resolved for perf
+        }
+
+        foreach ($recipients as $recipient) {
+            $recipient->setChunkId($this->chunkId);
+        }
+
+        $chunk = clone $this;
+        $chunk->toRecipients = $recipients;
+
+        return $chunk;
     }
 }

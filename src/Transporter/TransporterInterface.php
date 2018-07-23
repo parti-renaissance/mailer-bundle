@@ -6,5 +6,5 @@ use EnMarche\MailerBundle\Mail\MailInterface;
 
 interface TransporterInterface
 {
-    public function send(MailInterface $message): void;
+    public function schedule(MailInterface $message): void;
 }

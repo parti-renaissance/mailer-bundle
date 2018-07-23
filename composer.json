@@ -5,7 +5,9 @@
     "type": "symfony-bundle",
     "require": {
         "php": ">=7.1",
-        "symfony/framework-bundle": "^4.0"
+        "symfony/framework-bundle": "^4.0",
+        "php-amqplib/rabbitmq-bundle": "^1.14",
+        "ramsey/uuid-doctrine": "^1.4"
     },
     "autoload": {
         "psr-4": {
