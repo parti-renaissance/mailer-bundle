@@ -1,15 +1,29 @@
 {
     "name": "enmarche/mailer-bundle",
     "license": "GPL-3.0",
-    "description": "Email bundle",
+    "description": "Mailer bundle to ease proxying SAAS among private applications.",
     "type": "symfony-bundle",
     "require": {
         "php": ">=7.1",
-        "symfony/framework-bundle": "^4.0"
+        "ramsey/uuid": "^3.0",
+        "symfony/dependency-injection": "~3.4 || ^4.0",
+        "symfony/http-kernel": "~3.4 || ^4.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^7.2",
+        "doctrine/doctrine-bundle": "^1.9.1",
+        "php-amqplib/rabbitmq-bundle": "^1.14",
+        "ramsey/uuid-doctrine": "^1.4",
+        "guzzlehttp/guzzle": "^6.3"
     },
     "autoload": {
         "psr-4": {
             "EnMarche\\MailerBundle\\": "src"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "EnMarche\\MailerBundle\\Tests\\": "tests"
         }
     }
 }

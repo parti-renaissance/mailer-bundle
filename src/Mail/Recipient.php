@@ -4,59 +4,38 @@ namespace EnMarche\MailerBundle\Mail;
 
 class Recipient implements RecipientInterface
 {
-    private $email;
-    private $name;
-    private $templateVars = [];
+    protected $name;
+    protected $email;
+    protected $templateVars;
 
-    public function __construct(string $email, string $name, array $templateVars = [])
+    public function __construct(string $email, string $name = null, array $templateVars = [])
     {
         $this->email = $email;
-        $this->name = $name;
-        $this->templateVars = $templateVars;
+        $this->name = $name ? MailUtils::escapeHtml($name) : null;
+        $this->templateVars = MailUtils::validateTemplateVars($templateVars);
     }
 
+    /**
+     * {@inheritdoc}
+     */
+    public function getName(): ?string
+    {
+        return $this->name;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function getEmail(): string
     {
         return $this->email;
     }
 
-    public function setEmail(string $email): self
-    {
-        $this->email = $email;
-
-        return $this;
-    }
-
-    public function getName(): string
-    {
-        return $this->name;
-    }
-
-    public function setName($name): self
-    {
-        $this->name = $name;
-
-        return $this;
-    }
-
+    /**
+     * {@inheritdoc}
+     */
     public function getTemplateVars(): array
     {
         return $this->templateVars;
-    }
-
-    public function setTemplateVars(array $templateVars): self
-    {
-        $this->templateVars = $templateVars;
-
-        return $this;
-    }
-
-    public function jsonSerialize()
-    {
-        return [
-            'name' => $this->getName(),
-            'email' => $this->getEmail(),
-            'templateVars' => $this->getTemplateVars(),
-        ];
     }
 }

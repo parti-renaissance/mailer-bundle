@@ -2,29 +2,61 @@
 
 namespace EnMarche\MailerBundle\Mail;
 
-interface MailInterface extends \JsonSerializable
+use Ramsey\Uuid\UuidInterface;
+
+interface MailInterface
 {
-    public function getRecipients(): array;
+    public function getApp(): string;
 
-    public function setRecipients(array $recipients): self;
+    /**
+     * @return RecipientInterface[]
+     */
+    public function getToRecipients(): array;
 
-    public function getSubject(): string;
+    /**
+     * @return RecipientInterface[]
+     */
+    public function getCcRecipients(): array;
 
-    public function setSubject(string $subject): self;
+    /**
+     * @return RecipientInterface[]
+     */
+    public function getBccRecipients(): array;
 
-    public function getFromName(): string;
+    /**
+     * @return bool Whether the mail has cc or bcc recipients
+     */
+    public function hasCopyRecipients(): bool;
 
-    public function setFromName(string $fromName): self;
+    public function getReplyTo(): ?RecipientInterface;
 
-    public function getFromEmail(): string;
-
-    public function setFromEmail(string $fromEmail): self;
-
-    public function getTemplateKey(): string;
-
-    public function setTemplateKey(string $templateKey): self;
-
+    /**
+     * The common vars for campaign emails
+     *
+     * @return string[]
+     */
     public function getTemplateVars(): array;
 
-    public function setTemplateVars(array $templateVars): self;
+    public function getTemplateName(): string;
+
+    public function getCreatedAt(): \DateTimeImmutable;
+
+    /**
+     * @return string One of Mail constants
+     */
+    public function getType(): string;
+
+    /**
+     * Allows to identify all chunks from a same original mail.
+     */
+    public function getChunkId(): ?UuidInterface;
+
+    /**
+     * Create clone containing the provided size of recipients.
+     *
+     * @return static[]|iterable Passing -1 means no chunk
+     */
+    public function chunk(int $size = -1): iterable;
+
+    public function serialize(): string;
 }
