@@ -2,7 +2,6 @@
 
 namespace EnMarche\MailerBundle\Factory;
 
-use EnMarche\MailerBundle\Mail\ChunkableMailInterface;
 use EnMarche\MailerBundle\Mail\MailBuilder;
 use EnMarche\MailerBundle\Mail\MailInterface;
 use EnMarche\MailerBundle\Mail\Recipient;
@@ -56,14 +55,8 @@ class MailFactory implements MailFactoryInterface
             $builder->addToRecipient($varsFactory::createRecipient($recipient, $context));
         }
 
-        if (is_subclass_of($mailClass, ChunkableMailInterface::class)) {
-            if (!is_subclass_of($varsFactory, CampaignVarsFactoryInterface::class)) {
-                throw new \LogicException(\sprintf('The mail is of type campaign so the vars factory %s must implement %s.', \get_class($varsFactory), CampaignVarsFactoryInterface::class));
-            }
-
+        if (is_subclass_of($varsFactory, CampaignMailVarsFactoryInterface::class)) {
             $builder->setTemplateVars($varsFactory::createTemplateVars($context));
-        } elseif (\count($builder->getToRecipients()) > 1) {
-            throw new \LogicException(\sprintf('The class %s is transactional but there is more than one recipient Have you extended the wrong mail class?.', $mailClass));
         }
 
         if ($this->cc) {

@@ -50,7 +50,7 @@ class Mail implements MailInterface
         // ensure the template key is resolved
         $this->getTemplateName();
 
-        return \preg_replace('/C:\d+:[a-zA-Z0-9_]+Mail:/', 'C:4:Mail:', \serialize(\get_object_vars($this)));
+        return \preg_replace('/C:\d+:[a-zA-Z0-9_]+Mail:/', 'C:4:Mail:', \serialize($this));
     }
 
     /**

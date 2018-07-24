@@ -54,7 +54,7 @@ en_marche_mailer:
                     - [cc1@email.com, 'CC 1']
                 bcc:
                     - ['%env(MAILER_SOME_DEBUG_CC_ADDRESS)%']
-        #default_sender: turlututu
+        #default_toto: turlututu
 ```
 
 With the above, many services are created:
@@ -125,7 +125,7 @@ public function action(Request $request, Adherent $adherent, TotoInterface $toto
 {
     // ...
     
-    $toto->heah(AdherentResetPasswordMail::class, $adherent, [
+    $toto->heah(AdherentResetPasswordMail::class, [$adherent], [
         $this->>urlGenerator->generate('app_adherent_reset_password', ['token' => $resetPasswordToken]),
     ]);
 }
@@ -183,7 +183,7 @@ public function action(Request $request, Event $event, Adherent $invitee, TotoIn
     
     $turlututuToto->heah(
         EventInvitationMail::class,
-        $invitee,
+        [$invitee],
         [
             $event,
             $event->getHost()
@@ -192,11 +192,11 @@ public function action(Request $request, Event $event, Adherent $invitee, TotoIn
     );
 }
 ```
-   
+
 ## Consumers (processing emails)
-            
+
 A consumer is an app responsible for processing pending emails.
-            
+
 ### Configuration
             
 ```yaml
@@ -231,5 +231,4 @@ en_marche_mailer:
           type: http # default
           client: ~
           # todo other types would require other attributes than "client"
-      #default_sender: turlututu
 ```
