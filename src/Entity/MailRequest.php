@@ -100,6 +100,11 @@ class MailRequest implements MailRequestInterface
         return $this->recipientVars->count();
     }
 
+    public function hasCopyRecipients(): bool
+    {
+        return $this->vars->getCcRecipients()->count() || $this->vars->getBccRecipients()->count();
+    }
+
     /**
      * {@inheritdoc}
      *

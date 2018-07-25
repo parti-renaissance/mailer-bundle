@@ -27,6 +27,11 @@ interface MailRequestInterface
     public function getRecipientsCount(): int;
 
     /**
+     * @return bool true if a request has Cc or Bcc fields
+     */
+    public function hasCopyRecipients(): bool;
+
+    /**
      * @return Address[]|iterable
      */
     public function getCcRecipients(): iterable;

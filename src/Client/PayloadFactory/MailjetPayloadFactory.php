@@ -33,40 +33,11 @@ class MailjetPayloadFactory implements PayloadFactoryInterface
             $payload['Headers']['Reply-To'] = $this->formatAddress($replyTo);
         }
 
-        // Transactional
-        if ($ccRecipients = $mailRequest->getCcRecipients()) {
-            if ($mailRequest->getCampaign()) {
-                throw new \LogicException(\sprintf('A campaign mail request (id: %d, campaign: %s) cannot have CC recipients.', $mailRequest->getId(), $mailRequest->getCampaign()));
-            }
-
-            $recipientsVars = $mailRequest->getRecipientVars();
-
-            if ($mailRequest->getRecipientsCount() > 1) {
-                throw new \LogicException(\sprintf('The mail request (id: %d) has no campaign but more than one recipient.', $mailRequest->getId()));
-            }
-
-            foreach ($recipientsVars as $recipient) {
-                $payload['To'] = $this->formatAddress($recipient->getAddress());
-                $payload['Vars'] = $recipient->getTemplateVars();
-            }
-
-            $payload['Cc'] = \implode(', ', \array_map([$this, 'formatAddress'], $ccRecipients));
-
-            if ($bccRecipients = $mailRequest->getBccRecipients()) {
-                $payload['Bcc'] = \implode(', ', \array_map([$this, 'formatAddress'], $bccRecipients));
-            }
-
-            return $payload;
+        if ($mailRequest->hasCopyRecipients()) {
+            return $this->createTransactionalPayload($mailRequest, $payload);
         }
 
-        // Campaign
-        $templateVars = $mailRequest->getTemplateVars();
-
-        foreach ($mailRequest->getRecipientVars() as $recipient) {
-            $payload['Recipients'] = $this->createRecipient($recipient, $templateVars);
-        }
-
-        return $payload;
+        return $this->createCampaignPayload($mailRequest, $payload);
     }
 
     /**
@@ -75,6 +46,44 @@ class MailjetPayloadFactory implements PayloadFactoryInterface
     public function createResponsePayload(ResponseInterface $response): array
     {
         return \GuzzleHttp\json_decode($response->getBody());
+    }
+
+    private function createTransactionalPayload(MailRequestInterface $mailRequest, array $payload): array
+    {
+        if ($mailRequest->getCampaign()) {
+            throw new \LogicException(\sprintf('A campaign mail request (id: %d, campaign: %s) cannot have CC recipients.', $mailRequest->getId(), $mailRequest->getCampaign()));
+        }
+
+        $recipientsVars = $mailRequest->getRecipientVars();
+
+        if ($mailRequest->getRecipientsCount() > 1) {
+            throw new \LogicException(\sprintf('The mail request (id: %d) has no campaign but more than one recipient.', $mailRequest->getId()));
+        }
+
+        foreach ($recipientsVars as $recipient) {
+            $payload['To'] = $this->formatAddress($recipient->getAddress());
+            $payload['Vars'] = $recipient->getTemplateVars();
+        }
+
+        if ($ccRecipients = $mailRequest->getCcRecipients()) {
+            $payload['Cc'] = \implode(', ', \array_map([$this, 'formatAddress'], $ccRecipients));
+        }
+        if ($bccRecipients = $mailRequest->getBccRecipients()) {
+            $payload['Bcc'] = \implode(', ', \array_map([$this, 'formatAddress'], $bccRecipients));
+        }
+
+        return $payload;
+    }
+
+    private function createCampaignPayload(MailRequestInterface $mailRequest, array $payload): array
+    {
+        $templateVars = $mailRequest->getTemplateVars();
+
+        foreach ($mailRequest->getRecipientVars() as $recipient) {
+            $payload['Recipients'] = $this->createRecipient($recipient, $templateVars);
+        }
+
+        return $payload;
     }
 
     private function createRecipient(RecipientVars $recipientVars, array $templateVars): array
