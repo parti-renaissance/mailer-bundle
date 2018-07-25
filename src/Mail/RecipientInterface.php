@@ -2,8 +2,6 @@
 
 namespace EnMarche\MailerBundle\Mail;
 
-use Ramsey\Uuid\UuidInterface;
-
 interface RecipientInterface
 {
     public function getName(): ?string;
@@ -14,11 +12,4 @@ interface RecipientInterface
      * @return string[]
      */
     public function getTemplateVars(): array;
-
-    public function getChunkId(): ?UuidInterface;
-
-    /**
-     * @internal
-     */
-    public function setChunkId(UuidInterface $uuid): void;
 }

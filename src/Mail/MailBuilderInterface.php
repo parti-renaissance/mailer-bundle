@@ -53,5 +53,5 @@ interface MailBuilderInterface extends MailInterface
      */
     public function getMail(): MailInterface;
 
-    public static function create(string $mailClass): self;
+    public static function create(string $mailClass, string $app): self;
 }

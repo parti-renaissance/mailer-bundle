@@ -4,9 +4,9 @@ namespace EnMarche\MailerBundle\Mail;
 
 class Recipient implements RecipientInterface
 {
-    private $name;
-    private $email;
-    private $templateVars;
+    protected $name;
+    protected $email;
+    protected $templateVars;
 
     public function __construct(string $email, string $name = null, array $templateVars = [])
     {

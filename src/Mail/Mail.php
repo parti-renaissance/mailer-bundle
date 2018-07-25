@@ -12,29 +12,33 @@ class Mail implements MailInterface
 
     public const DEFAULT_CHUNK_SIZE = 50;
 
-    protected $toRecipients;
-    protected $ccRecipients;
-    protected $bccRecipients;
-    protected $replyTo;
-    protected $templateVars;
-    protected $templateName;
     protected $type;
-    protected $chunkId;
+
+    private $app;
+    private $toRecipients;
+    private $ccRecipients;
+    private $bccRecipients;
+    private $replyTo;
+    private $templateVars;
+    private $templateName;
+    private $chunkId;
 
     /**
      * @param RecipientInterface[]|iterable $toRecipients
-     * @param RecipientInterface|null $replyTo
-     * @param RecipientInterface[]    $ccRecipients
-     * @param RecipientInterface[]    $bccRecipients
-     * @param string[]                $templateVars
+     * @param RecipientInterface|null       $replyTo
+     * @param RecipientInterface[]          $ccRecipients
+     * @param RecipientInterface[]          $bccRecipients
+     * @param string[]                      $templateVars
      */
     final protected function __construct(
+        string $app,
         iterable $toRecipients,
         RecipientInterface $replyTo = null,
         array $ccRecipients = [],
         array $bccRecipients = [],
         array $templateVars = []
     ) {
+        $this->app = $app;
         $this->toRecipients = $toRecipients;
         $this->replyTo = $replyTo;
         $this->ccRecipients = $ccRecipients;
@@ -50,6 +54,7 @@ class Mail implements MailInterface
         // ensure the template key is resolved
         $this->getTemplateName();
 
+        // Enforce serializing the Mail class instead of the children one to prevent unserializing an unknow class later
         return \preg_replace('/C:\d+:[a-zA-Z0-9_]+Mail:/', 'C:4:Mail:', \serialize($this));
     }
 
@@ -61,6 +66,11 @@ class Mail implements MailInterface
         foreach (\unserialize($serialized) as $property => $value) {
             $this->$property = $value;
         }
+    }
+
+    public function getApp(): string
+    {
+        return $this->app;
     }
 
     /**
@@ -124,7 +134,7 @@ class Mail implements MailInterface
         return $this->type;
     }
 
-    public function getChunkId(): ?UuidInterface
+    final public function getChunkId(): ?UuidInterface
     {
         return $this->chunkId;
     }
@@ -132,23 +142,9 @@ class Mail implements MailInterface
     /**
      * {@inheritdoc}
      */
-    final public function chunk(int $size = self::DEFAULT_CHUNK_SIZE): iterable
+    public function chunk(int $size = self::DEFAULT_CHUNK_SIZE): iterable
     {
-        $chunk = 0;
-        $recipients = [];
-
-        foreach ($this->toRecipients as $recipient) {
-            $recipients[] = $recipient;
-            $chunk++;
-
-            if (0 === $chunk % $size) {
-                yield $this->createChunk($recipients);
-
-                $recipients = [];
-            }
-        }
-
-        if ($recipients) {
+        foreach (\array_chunk($this->toRecipients, $size) as $recipients) {
             yield $this->createChunk($recipients);
         }
     }
@@ -161,10 +157,6 @@ class Mail implements MailInterface
         if (!$this->chunkId) {
             $this->chunkId = Uuid::uuid4();
             $this->getTemplateName(); // ensure the template name is resolved for perf
-        }
-
-        foreach ($recipients as $recipient) {
-            $recipient->setChunkId($this->chunkId);
         }
 
         $chunk = clone $this;

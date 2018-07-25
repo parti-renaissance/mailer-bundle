@@ -7,7 +7,7 @@ use EnMarche\MailerBundle\Mail\Mail;
 use EnMarche\MailerBundle\Mail\MailInterface;
 use OldSound\RabbitMqBundle\RabbitMq\ProducerInterface;
 
-class RabbitMQTransporter implements TransporterInterface
+class AmqpMailTransporter implements TransporterInterface
 {
     private $producer;
     private $chunkSize;

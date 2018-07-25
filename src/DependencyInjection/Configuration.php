@@ -3,6 +3,7 @@
 namespace EnMarche\MailerBundle\DependencyInjection;
 
 use EnMarche\MailerBundle\Transporter\TransporterType;
+use Symfony\Component\Config\Definition\Builder\ArrayNodeDefinition;
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Symfony\Component\Config\Definition\ConfigurationInterface;
 
@@ -12,22 +13,58 @@ class Configuration implements ConfigurationInterface
     {
         $treeBuilder = new TreeBuilder();
         $rootNode = $treeBuilder->root('en_marche_mailer');
+
+        $this->addProducerSection($rootNode);
+
+        return $treeBuilder;
+    }
+
+    private function addProducerSection(ArrayNodeDefinition $rootNode)
+    {
         $rootNode
             ->children()
-                ->arrayNode('transporter')
+                ->arrayNode('producer')
                     ->children()
-                        ->scalarNode('type')
+                        ->scalarNode('app_name')->isRequired()->end()
+                        ->arrayNode('transporter')
+                            ->children()
+                                ->scalarNode('type')
+                                    ->isRequired()
+                                    ->defaultValue(TransporterType::AMQP)
+                                ->end()
+                                ->scalarNode('driver')
+                                    ->isRequired()
+                                ->end()
+                            ->end()
                             ->isRequired()
-                            ->defaultValue(TransporterType::RMQ)
                         ->end()
-                        ->scalarNode('driver')
-                            ->isRequired()
+                        ->scalarNode('default_toto')->defaultValue('default')->end()
+                        ->arrayNode('totos')
+                            ->useAttributeAsKey('name')
+                            ->arrayPrototype()
+                                ->children()
+                                    ->arrayNode('cc')
+                                        ->arrayPrototype()
+                                            ->children()
+                                                ->scalarNode('email')->isRequired()->end()
+                                                ->scalarNode('name')->end()
+                                            ->end()
+                                        ->end()
+                                    ->end()
+                                    ->arrayNode('bcc')
+                                        ->arrayPrototype()
+                                            ->children()
+                                                ->scalarNode('email')->isRequired()->end()
+                                                ->scalarNode('name')->end()
+                                            ->end()
+                                        ->end()
+                                    ->end()
+                                ->end()
+                            ->end()
                         ->end()
                     ->end()
                 ->end()
             ->end()
         ;
-
-        return $treeBuilder;
     }
 }

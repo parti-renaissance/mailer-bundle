@@ -8,15 +8,19 @@ use EnMarche\MailerBundle\Mail\Recipient;
 
 class MailFactory implements MailFactoryInterface
 {
+    private $app;
     private $cc;
     private $bcc;
 
     /**
+     * @param string  $app The application key name
      * @param array[] $cc  Each array must contain at least the email, then the name
      * @param array[] $bcc
      */
-    public function __construct(array $cc = [], array $bcc = [])
+    public function __construct(string $app, array $cc = [], array $bcc = [])
     {
+        $this->app = $app;
+
         foreach ($cc as $recipient) {
             if (!is_array($recipient)) {
                 throw new \InvalidArgumentException(\sprintf('Expected an array, got %s.', \gettype($recipient)));
@@ -49,7 +53,7 @@ class MailFactory implements MailFactoryInterface
         }
 
         $varsFactory = $varsFactory ?: $mailClass;
-        $builder = MailBuilder::create($mailClass);
+        $builder = MailBuilder::create($mailClass, $this->app);
 
         foreach ($to as $recipient) {
             $builder->addToRecipient($varsFactory::createRecipient($recipient, $context));

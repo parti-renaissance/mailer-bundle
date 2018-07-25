@@ -6,6 +6,8 @@ use Ramsey\Uuid\UuidInterface;
 
 interface MailInterface extends \Serializable
 {
+    public function getApp(): string;
+
     /**
      * @return RecipientInterface[]
      */

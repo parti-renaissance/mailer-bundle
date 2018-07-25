@@ -7,6 +7,11 @@ use EnMarche\MailerBundle\Exception\InvalidMailClassException;
 class MailBuilder extends Mail implements MailBuilderInterface
 {
     private $mailClass;
+    private $toRecipients;
+    private $ccRecipients;
+    private $bccRecipients;
+    private $replyTo;
+    private $templateVars;
 
     /**
      * {@inheritdoc}
@@ -175,13 +180,13 @@ class MailBuilder extends Mail implements MailBuilderInterface
         );
     }
 
-    public static function create(string $mailClass = Mail::class): MailBuilderInterface
+    public static function create(string $mailClass = Mail::class, string $app): MailBuilderInterface
     {
         if (!is_subclass_of($mailClass, Mail::class)) {
             throw new InvalidMailClassException($mailClass);
         }
 
-        $builder = new self([]);
+        $builder = new self($app, []);
         $builder->mailClass = $mailClass;
 
         return $builder;

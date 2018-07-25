@@ -7,6 +7,6 @@ final class TransporterType
     public const AMQP = 'amqp';
 
     public const CLASSES = [
-        self::AMQP => RabbitMQTransporter::class,
+        self::AMQP => AmqpMailTransporter::class,
     ];
 }
