@@ -5,6 +5,7 @@ namespace EnMarche\MailerBundle\Factory;
 use EnMarche\MailerBundle\Mail\MailBuilder;
 use EnMarche\MailerBundle\Mail\MailInterface;
 use EnMarche\MailerBundle\Mail\Recipient;
+use EnMarche\MailerBundle\Mail\RecipientInterface;
 
 class MailFactory implements MailFactoryInterface
 {
@@ -25,14 +26,12 @@ class MailFactory implements MailFactoryInterface
             if (!is_array($recipient)) {
                 throw new \InvalidArgumentException(\sprintf('Expected an array, got %s.', \gettype($recipient)));
             }
-
             $this->cc[] = new Recipient(...$recipient);
         }
         foreach ($bcc as $recipient) {
             if (!is_array($recipient)) {
                 throw new \InvalidArgumentException(\sprintf('Expected an array, got %s.', \gettype($recipient)));
             }
-
             $this->bcc[] = new Recipient(...$recipient);
         }
     }
@@ -43,34 +42,29 @@ class MailFactory implements MailFactoryInterface
     public function createForClass(
         string $mailClass,
         array $to,
-        array $context,
-        $replyTo = null,
-        MailVarsFactoryInterface $varsFactory = null
+        RecipientInterface $replyTo = null,
+        array $templateVars = []
     ): MailInterface
     {
-        if (!$varsFactory && !\is_subclass_of($mailClass, MailVarsFactoryInterface::class)) {
-            throw new \InvalidArgumentException(\sprintf('You must either pass a %s as third argument or let the mail class implements it.', MailVarsFactoryInterface::class));
+        if (!$to) {
+            throw new \InvalidArgumentException('Mail must have at least one recipient.');
         }
 
-        $varsFactory = $varsFactory ?: $mailClass;
-        $builder = MailBuilder::create($mailClass, $this->app);
+        $builder = MailBuilder::create($mailClass, $this->app)
+            ->setToRecipients($to)
+        ;
 
-        foreach ($to as $recipient) {
-            $builder->addToRecipient($varsFactory::createRecipient($recipient, $context));
+        if ($replyTo) {
+            $builder->setReplyTo($replyTo);
         }
-
-        if (is_subclass_of($varsFactory, CampaignMailVarsFactoryInterface::class)) {
-            $builder->setTemplateVars($varsFactory::createTemplateVars($context));
+        if ($templateVars) {
+            $builder->setTemplateVars($templateVars);
         }
-
         if ($this->cc) {
             $builder->setCcRecipients($this->cc);
         }
         if ($this->bcc) {
             $builder->setBccRecipients($this->bcc);
-        }
-        if ($replyTo) {
-            $builder->setReplyTo($varsFactory::createReplyTo($replyTo));
         }
 
         return $builder->getMail();

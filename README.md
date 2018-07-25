@@ -37,16 +37,14 @@ To declare an app as such is done using the following configuration:
 # app/config/config.yml for Symfony 3.4
 # config/packages/en_marche_mailer.yaml for Symfony 4.x
 en_marche_mailer:
+    amqp_dsn: ~
+    amqp_mail_routing_key: ~
     producer:
         app_name: data-api
         default_campaign_chunk_size: 50 # default
         transport:
             type: amqp # default
             chunk_size: 100 # overrides the default
-            # specific keys for type
-            dsn: 
-            routing_key: ~
-            # todo other types would require other attributes than "dsn" and "routing_key"
 
         totos:
             turlututu: # name
@@ -90,7 +88,7 @@ use EnMarche\MailerBundle\Mail\TransactionalMail;
 
 class AdherentResetPasswordMail extends TransactionalMail
 {
-    public static function createRecipientForAdherent(Adherent $adherent, string $resetUrl): RecipientInterface
+    public static function createRecipientFor(Adherent $adherent, string $resetUrl): RecipientInterface
     {
         return new Recipient(
             $adherent->getEmail(),
@@ -103,18 +101,11 @@ class AdherentResetPasswordMail extends TransactionalMail
 }
 ```
 
-Internally the following is called:
+Adding static methods to build recipients and template vars is a good way to keep application code clean.
 
-```php
-public static function createRecipient($recipient, array $context): RecipientInterface
-```
-
-Just name your method by starting with "createRecipientFor..." to override it with your own type hint :).
-"..." is even optional, naming it "createRecipientFor" is enough!
-The context will be passed unpacked to your custom method, allowing you to type hint each entry of the it.
-It also works for `createReplyTo(array $replyTo)`
-
-Then in a controller, listener or command, or whatever service needing to send that email, use the `TotoInterface`:
+Then in a controller, listener or command, or whatever service needing to send that email, use the `TotoInterface`.
+It requires a mail class and an array of RecipientInterface, then optionally a Recipient to reply to and a array of
+template vars.
 
 ```php
 // ...
@@ -125,8 +116,14 @@ public function action(Request $request, Adherent $adherent, TotoInterface $toto
 {
     // ...
     
-    $toto->heah(AdherentResetPasswordMail::class, [$adherent], [
-        $this->>urlGenerator->generate('app_adherent_reset_password', ['token' => $resetPasswordToken]),
+    $toto->heah(
+        AdherentResetPasswordMail::class,
+        [
+            AdherentResetPasswordMail::createRecipientFor(
+                $adherent,
+                $this->>urlGenerator->generate('app_adherent_reset_password', ['token' => $resetPasswordToken])
+            ),
+        ]
     ]);
 }
 ```
@@ -134,12 +131,8 @@ public function action(Request $request, Adherent $adherent, TotoInterface $toto
 The method signature is:
 
 ```php
-public function heah(string $mailClass, array $to, array $context, $replyTo = null): void;
+public function heah(string $mailClass, array $to, RecipientInterface $replyTo = null, array $templateVars = []): void;
 ```
-
- * Each entry of `$to` will be passed to `createRecipient` with `$context`
- * `$context`  will be passed to `createTemplateVars` too for campaign messages
- * `$replyTo` will be passed to `createReplyTo`
 
 Example with a campaign message:
 
@@ -153,9 +146,27 @@ use EnMarche\MailerBundle\Mail\RecipientInterface;
 
 class EventInvitationMail extends CampaignMail
 {
-    public static function createRecipientForInvitee(Adherent $invitee, Event $event, Adherent $host): RecipientInterface
+    /**
+     * @param Adherent[]
+     *
+     * @return RecipientInterface[]
+     */
+    public static function createRecipientForInvitees(array $invitees): array
     {
-        return new Recipient($invitee->getEmail(), $invitee->getFullName());
+        return \array_map(function (Adherent $invitee) {
+            return new Recipient($invitee->getEmail(), $invitee->getFullName(), [
+                'is_animator' => $invitee->isAnimator(),
+            ]);
+        }, $invitees);
+    }
+    
+    public static function createReplyToFor(?Adherent $adherent): ?RecipientInterface
+    {
+        if ($adherent) {
+            return new Recipient($adherent->getEmail(), $adherent->getFullName());
+        }
+        
+        return null;
     }
 
     // Campaign mails can set global vars
@@ -168,30 +179,25 @@ class EventInvitationMail extends CampaignMail
             // ...
         ];
     }
-
-    public static function createReplyToFor(Adherent $sender): RecipientInterface
-    {
-        return new Recipient($sender->getEmail(), $sender->getFullName());
-    }
 }
 ```
 
 ```php
-public function action(Request $request, Event $event, Adherent $invitee, TotoInterface $turlututuToto)
+public function action(Request $request, Event $event, TotoInterface $turlututuToto)
 {
     // ...
     
     $turlututuToto->heah(
         EventInvitationMail::class,
-        [$invitee],
-        [
-            $event,
-            $event->getHost()
-        ],
-        $this->>getUser()
+        EventInvitationMail::createRecipientForInvitees($invitees),
+        EventInvitationMail::createReplyToFor($this->>getUser()),
+        EventInvitationMail::createTemplateVarsFor($event, $event->getHost())
     );
 }
 ```
+
+Of course, instead of static methods you can use whatever way you want to build the needed arguments.
+Consider using the above method, or implement some kind of MailVarsFactory if you really need a service.
 
 ## Consumers (processing emails)
 
@@ -203,14 +209,14 @@ A consumer is an app responsible for processing pending emails.
 # app/config/config.yml for Symfony 3.4
 # config/packages/en_marche_mailer.yaml for Symfony 4.x
 en_marche_mailer:
+    databse_url: ~
+    amqp_dsn: ~
+    amqp_mail_routing_key: ~
+    amqp_request_routing_key: ~
     consumer:
-        databse_url: ~ # todo other processing type ?
         transport:
             type: amqp # default
-            dsn: ~
-            routing_key: ~
-            # todo other types would require other attributes than "dsn" and "routing_key"
-        forward: ~ # same as transport
+        forward: ~ # same options as transport
 ```
 
 ## Senders (actual scheduling of emails)
@@ -224,11 +230,11 @@ The sender is a kind of internal En-Marche proxy for the SAAS.
 # app/config/config.yml for Symfony 3.4
 # config/packages/en_marche_mailer.yaml for Symfony 4.x
 en_marche_mailer:
-  # For producers (creating emails)
-  sender:
-      databse_url: ~
-      transport:
-          type: http # default
-          client: ~
-          # todo other types would require other attributes than "client"
+    databse_url: ~
+    amqp_dsn: ~
+    amqp_request_routing_key: ~
+    # For producers (creating emails)
+    sender:
+        transport:
+            type: amqp # default
 ```

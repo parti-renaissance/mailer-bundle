@@ -180,7 +180,7 @@ class MailBuilder extends Mail implements MailBuilderInterface
         );
     }
 
-    public static function create(string $mailClass = Mail::class, string $app): MailBuilderInterface
+    public static function create(string $mailClass, string $app): MailBuilderInterface
     {
         if (!is_subclass_of($mailClass, Mail::class)) {
             throw new InvalidMailClassException($mailClass);
