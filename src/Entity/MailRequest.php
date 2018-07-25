@@ -8,7 +8,7 @@ use Doctrine\ORM\Mapping as ORM;
 use Ramsey\Uuid\UuidInterface;
 
 /**
- * @ORM\Entity
+ * @ORM\Entity(repositoryClass="EnMarche\MailerBundle\Repository\MailRequestRepository")
  * @ORM\Table(
  *     name="mail_requests",
  *     indexes={

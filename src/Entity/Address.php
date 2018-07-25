@@ -9,7 +9,7 @@ use Doctrine\ORM\Mapping as ORM;
  * @ORM\Table(
  *     name="addresses",
  *     indexes={
- *         @ORM\Index(name="email_idx",
+ *         @ORM\Index(name="email_idx", columns={"canonical_email"})
  *     }
  * )
  */

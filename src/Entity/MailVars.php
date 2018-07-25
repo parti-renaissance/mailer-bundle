@@ -14,9 +14,9 @@ use Ramsey\Uuid\UuidInterface;
  * @ORM\Table(
  *     name="mail_vars",
  *     indexes={
- *         @ROM\Index(name="app_idx", columns={"app"}),
- *         @ROM\Index(name="type_idx", columns={"type"}),
- *         @ROM\Index(name="campaign_idx", columns={"campaign"})
+ *         @ORM\Index(name="app_idx", columns={"app"}),
+ *         @ORM\Index(name="type_idx", columns={"type"}),
+ *         @ORM\Index(name="campaign_idx", columns={"campaign"})
  *     }
  * )
  */
