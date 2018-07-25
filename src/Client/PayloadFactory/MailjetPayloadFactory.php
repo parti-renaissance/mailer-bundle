@@ -8,6 +8,15 @@ use EnMarche\MailerBundle\Entity\Address;
 use EnMarche\MailerBundle\Entity\RecipientVars;
 use Psr\Http\Message\ResponseInterface;
 
+/**
+ * From a Mailjet perspective, having Cc or Bcc means sending email to only one recipient.
+ * Indeed, using "To", "Cc", "Bcc" fields means having only one set of vars (recipient's become globals).
+ *
+ * When no copy is needed, the field "Recipients" can be used passing a specific set of variables to each entry,
+ * but globals vars must be merged in all of them.
+ *
+ * @link https://dev.mailjet.com/guides/?php#send-api-v3
+ */
 class MailjetPayloadFactory implements PayloadFactoryInterface
 {
     /**
@@ -17,15 +26,17 @@ class MailjetPayloadFactory implements PayloadFactoryInterface
     {
         $payload = [
             'MJ-TemplateID' => $mailRequest->getTemplateName(),
-            'MJ-TemplateLanguage' => true,
+            'MJ-TemplateLanguage' => true, // allows injecting vars
         ];
 
-        $templateVars = $mailRequest->getTemplateVars();
+        if ($replyTo = $mailRequest->getReplyTo()) {
+            $payload['Headers']['Reply-To'] = $this->formatAddress($replyTo);
+        }
 
+        // Transactional
         if ($ccRecipients = $mailRequest->getCcRecipients()) {
-            // Transactional
             if ($mailRequest->getCampaign()) {
-                throw new \LogicException(\sprintf('A campaign mail request (id: %d, campaign id:  %s) cannot have CC recipients.', $mailRequest->getId(), $mailRequest->getCampaign()));
+                throw new \LogicException(\sprintf('A campaign mail request (id: %d, campaign: %s) cannot have CC recipients.', $mailRequest->getId(), $mailRequest->getCampaign()));
             }
 
             $recipientsVars = $mailRequest->getRecipientVars();
@@ -44,15 +55,15 @@ class MailjetPayloadFactory implements PayloadFactoryInterface
             if ($bccRecipients = $mailRequest->getBccRecipients()) {
                 $payload['Bcc'] = \implode(', ', \array_map([$this, 'formatAddress'], $bccRecipients));
             }
-        } else {
-            // Campaign
-            foreach ($mailRequest->getRecipientVars() as $recipient) {
-                $payload['Recipients'] = $this->createRecipient($recipient, $templateVars);
-            }
+
+            return $payload;
         }
 
-        if ($replyTo = $mailRequest->getReplyTo()) {
-            $payload['Headers']['Reply-To'] = $this->formatAddress($replyTo);
+        // Campaign
+        $templateVars = $mailRequest->getTemplateVars();
+
+        foreach ($mailRequest->getRecipientVars() as $recipient) {
+            $payload['Recipients'] = $this->createRecipient($recipient, $templateVars);
         }
 
         return $payload;
