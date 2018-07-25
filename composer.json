@@ -14,7 +14,8 @@
         "phpunit/phpunit": "^7.2",
         "doctrine/doctrine-bundle": "^1.9.1",
         "php-amqplib/rabbitmq-bundle": "^1.14",
-        "ramsey/uuid-doctrine": "^1.4"
+        "ramsey/uuid-doctrine": "^1.4",
+        "guzzlehttp/guzzle": "^6.3"
     },
     "autoload": {
         "psr-4": {

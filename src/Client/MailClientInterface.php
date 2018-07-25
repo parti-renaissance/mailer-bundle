@@ -2,9 +2,12 @@
 
 namespace EnMarche\MailerBundle\Client;
 
-use EnMarche\MailerBundle\Entity\MailRequest;
+use GuzzleHttp\Exception\GuzzleException;
 
 interface MailClientInterface
 {
-    public function send(MailRequest $mailRequest): void;
+    /**
+     * @throws GuzzleException
+     */
+    public function send(MailRequestInterface $mailRequest): void;
 }

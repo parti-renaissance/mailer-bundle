@@ -5,6 +5,7 @@ namespace EnMarche\MailerBundle\Entity;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use EnMarche\MailerBundle\Client\MailRequestInterface;
 use Ramsey\Uuid\UuidInterface;
 
 /**
@@ -16,7 +17,7 @@ use Ramsey\Uuid\UuidInterface;
  *     }
  * )
  */
-class MailRequest
+class MailRequest implements MailRequestInterface
 {
     /**
      * @var int|null
@@ -51,6 +52,20 @@ class MailRequest
     private $campaign;
 
     /**
+     * @var array|null
+     *
+     * @ORM\Column(type="json_array", nullable=true)
+     */
+    private $requestPayload;
+
+    /**
+     * @var array|null
+     *
+     * @ORM\Column(type="json_array", nullable=true)
+     */
+    private $responsePayload;
+
+    /**
      * @param RecipientVars[] $recipientVars
      */
     public function __construct(MailVars $vars, array $recipientVars)
@@ -71,15 +86,101 @@ class MailRequest
     }
 
     /**
+     * {@inheritdoc}
+     *
      * @return RecipientVars[]|Collection
      */
-    public function getRecipientVars(): Collection
+    public function getRecipientVars(): iterable
     {
         return $this->recipientVars;
     }
 
+    public function getRecipientsCount(): int
+    {
+        return $this->recipientVars->count();
+    }
+
+    /**
+     * {@inheritdoc}
+     *
+     * @return Address[]|iterable
+     */
+    public function getCcRecipients(): iterable
+    {
+        return $this->vars->getCcRecipients();
+    }
+
+    /**
+     * {@inheritdoc}
+     *
+     * @return Address[]|iterable
+     */
+    public function getBccRecipients(): iterable
+    {
+        return $this->vars->getBccRecipients();
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function getCampaign(): ?UuidInterface
     {
-        return $this-$this->campaign;
+        return $this->campaign;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getReplyTo(): ?Address
+    {
+        return $this->vars->getReplyTo();
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getTemplateName(): string
+    {
+        return $this->vars->getTemplateName();
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getTemplateVars(): array
+    {
+        return $this->vars->getTemplateVars();
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getRequestPayload(): ?array
+    {
+        return $this->requestPayload;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function setRequestPayload(array $requestPayload): void
+    {
+        $this->requestPayload = $requestPayload;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getResponsePayload(): ?array
+    {
+        return $this->responsePayload;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function setResponsePayload(array $responsePayload): void
+    {
+        $this->responsePayload = $responsePayload;
     }
 }
