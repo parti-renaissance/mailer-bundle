@@ -2,7 +2,7 @@
 
 namespace EnMarche\MailerBundle\Factory;
 
-use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
+use EnMarche\MailerBundle\Client\MailRequestInterface;
 use EnMarche\MailerBundle\Entity\Address;
 use EnMarche\MailerBundle\Entity\MailRequest;
 use EnMarche\MailerBundle\Entity\MailVars;
@@ -23,7 +23,7 @@ class MailRequestFactory implements MailRequestFactoryInterface
         $this->mailVarsRepository = $mailVarsRepository;
     }
 
-    public function createRequestForMail(MailInterface $mail): MailRequest
+    public function createRequestForMail(MailInterface $mail): MailRequestInterface
     {
         return new MailRequest(
             $this->createMailVars($mail),

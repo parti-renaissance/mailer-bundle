@@ -12,6 +12,11 @@ use PhpAmqpLib\Message\AMQPMessage;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 
+/**
+ * Responsible for transforming common app mails to requests entities that will be ultimately sent to the SAAS.
+ *
+ * The consumer re routes an id from data using a ProducerInterface.
+ */
 class MailConsumer implements ConsumerInterface
 {
     private $producer;

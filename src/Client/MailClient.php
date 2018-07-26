@@ -21,6 +21,7 @@ class MailClient implements MailClientInterface
      */
     public function send(MailRequestInterface $mailRequest): void
     {
+        // maybe a retry
         $requestPayload = $mailRequest->getRequestPayload();
 
         if (!$requestPayload) {
@@ -33,6 +34,6 @@ class MailClient implements MailClientInterface
             'body' => $requestPayload,
         ]);
 
-        $mailRequest->setResponsePayload($response);
+        $mailRequest->setResponsePayload($this->payloadFactory->createResponsePayload($response));
     }
 }

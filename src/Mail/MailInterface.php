@@ -4,7 +4,7 @@ namespace EnMarche\MailerBundle\Mail;
 
 use Ramsey\Uuid\UuidInterface;
 
-interface MailInterface extends \Serializable
+interface MailInterface
 {
     public function getApp(): string;
 
@@ -47,4 +47,6 @@ interface MailInterface extends \Serializable
      * @return static[]|iterable Passing -1 means no chunk
      */
     public function chunk(int $size = -1): iterable;
+
+    public function serialize(): string;
 }

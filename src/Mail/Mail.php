@@ -49,33 +49,6 @@ class Mail implements MailInterface
     /**
      * {@inheritdoc}
      */
-    final public function serialize()
-    {
-        // ensure the template key is resolved
-        $this->getTemplateName();
-
-        // Enforce serializing the Mail class instead of the children one to prevent unserializing an unknow class later
-        return \preg_replace('/C:\d+:[a-zA-Z0-9_]+Mail:/', 'C:4:Mail:', \serialize($this));
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    final public function unserialize($serialized)
-    {
-        foreach (\unserialize($serialized) as $property => $value) {
-            $this->$property = $value;
-        }
-    }
-
-    public function getApp(): string
-    {
-        return $this->app;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
     final public function getToRecipients(): array
     {
         return $this->toRecipients;
@@ -114,7 +87,9 @@ class Mail implements MailInterface
     }
 
     /**
-     * Converts short class name to snake case.
+     * {@inheritdoc}
+     *
+     * Converts short class name to snake case by default.
      */
     final public function getTemplateName(): string
     {
@@ -129,11 +104,17 @@ class Mail implements MailInterface
         }, \preg_replace('/Mail$/', '', \end($parts)));
     }
 
+    /**
+     * {@inheritdoc}
+     */
     final public function getType(): string
     {
         return $this->type;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     final public function getChunkId(): ?UuidInterface
     {
         return $this->chunkId;
@@ -150,9 +131,30 @@ class Mail implements MailInterface
     }
 
     /**
+     * {@inheritdoc}
+     */
+    final public function serialize(): string
+    {
+        // Enforce serializing the Mail class instead of the children one to prevent unserializing an unknow class later
+        $mail = new self(
+            $this->app,
+            $this->toRecipients,
+            $this->replyTo,
+            $this->ccRecipients,
+            $this->bccRecipients,
+            $this->templateVars
+        );
+        // ensure the template key is resolved
+        $mail->templateName = $this->templateName ?: $this->getTemplateName();
+        $mail->chunkId = $this->chunkId;
+
+        return \serialize($mail);
+    }
+
+    /**
      * @param RecipientInterface[] $recipients
      */
-    private function createChunk(array $recipients): MailInterface
+    private function createChunk(array $recipients): self
     {
         if (!$this->chunkId) {
             $this->chunkId = Uuid::uuid4();

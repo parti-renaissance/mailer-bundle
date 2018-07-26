@@ -33,6 +33,6 @@ class AmqpMailTransporter implements TransporterInterface
 
     private function publish(MailInterface $mail): void
     {
-        $this->producer->publish(\serialize($mail), $this->routingKey.'_'.$mail->getType());
+        $this->producer->publish($mail->serialize(), $this->routingKey.'_'.$mail->getType());
     }
 }

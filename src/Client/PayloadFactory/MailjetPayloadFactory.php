@@ -34,6 +34,10 @@ class MailjetPayloadFactory implements PayloadFactoryInterface
         }
 
         if ($mailRequest->hasCopyRecipients()) {
+            if ($mailRequest->getCampaign()) {
+                throw new \LogicException(\sprintf('A campaign mail request (id: %d, campaign: %s) cannot have CC recipients.', $mailRequest->getId(), $mailRequest->getCampaign()));
+            }
+
             return $this->createTransactionalPayload($mailRequest, $payload);
         }
 
@@ -50,17 +54,16 @@ class MailjetPayloadFactory implements PayloadFactoryInterface
 
     private function createTransactionalPayload(MailRequestInterface $mailRequest, array $payload): array
     {
-        if ($mailRequest->getCampaign()) {
-            throw new \LogicException(\sprintf('A campaign mail request (id: %d, campaign: %s) cannot have CC recipients.', $mailRequest->getId(), $mailRequest->getCampaign()));
-        }
+        $recipientsCount = $mailRequest->getRecipientsCount();
 
-        $recipientsVars = $mailRequest->getRecipientVars();
-
-        if ($mailRequest->getRecipientsCount() > 1) {
+        if ($recipientsCount > 1) {
             throw new \LogicException(\sprintf('The mail request (id: %d) has no campaign but more than one recipient.', $mailRequest->getId()));
         }
+        if ($recipientsCount === 0) {
+            throw new \LogicException(\sprintf('The mail request (id: %d) has no recipient.', $mailRequest->getId()));
+        }
 
-        foreach ($recipientsVars as $recipient) {
+        foreach ($mailRequest->getRecipientVars() as $recipient) {
             $payload['To'] = $this->formatAddress($recipient->getAddress());
             $payload['Vars'] = $recipient->getTemplateVars();
         }
