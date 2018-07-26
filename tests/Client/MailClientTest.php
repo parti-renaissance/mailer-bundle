@@ -55,6 +55,10 @@ class MailClientTest extends TestCase
         ;
 
         $response = $this->createMock(ResponseInterface::class);
+        $response->expects($this->once())
+            ->method('getStatusCode')
+            ->willReturn(200)
+        ;
 
         $this->client->expects($this->once())
             ->method('request')
@@ -86,6 +90,10 @@ class MailClientTest extends TestCase
         ;
 
         $response = $this->createMock(ResponseInterface::class);
+        $response->expects($this->once())
+            ->method('getStatusCode')
+            ->willReturn(200)
+        ;
 
         $this->client->expects($this->once())
             ->method('request')
@@ -107,10 +115,49 @@ class MailClientTest extends TestCase
         $this->assertSame($responsePayload, $mailRequest->getResponsePayload());
     }
 
+    /**
+     * @expectedException \EnMarche\MailerBundle\Exception\InvalidMailResponseException
+     * @expectedExceptionMessage Invalid response (code: 500) for mail request (id: 1):
+     *                           "error happens"
+     */
+    public function testInvalidResponse()
+    {
+        $requestPayload = ['request_payload'];
+        $mailRequest = $this->getMailRequest($requestPayload);
+
+        $this->payloadFactory->expects($this->never())
+            ->method('createRequestPayload')
+        ;
+
+        $response = $this->createMock(ResponseInterface::class);
+        $response->expects($this->any())
+            ->method('getStatusCode')
+            ->willReturn(500)
+        ;
+        $response->expects($this->once())
+            ->method('getBody')
+            ->willReturn('error happens')
+        ;
+
+        $this->client->expects($this->once())
+            ->method('request')
+            ->with('POST', '', ['body' => $requestPayload])
+            ->willReturn($response)
+        ;
+
+        $this->payloadFactory->expects($this->never())
+            ->method('createResponsePayload')
+        ;
+
+        $this->mailClient->send($mailRequest);
+    }
+
     private function getMailRequest(array $requestPayload = null): MailRequestInterface
     {
         return new class($requestPayload) extends DummyMailRequest
         {
+            public $id = 1;
+
             public function __construct(array $requestPayload = null)
             {
                 $this->requestPayload = $requestPayload;

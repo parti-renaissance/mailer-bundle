@@ -23,6 +23,9 @@ class MailRequestFactory implements MailRequestFactoryInterface
         $this->mailVarsRepository = $mailVarsRepository;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function createRequestForMail(MailInterface $mail): MailRequestInterface
     {
         return new MailRequest(

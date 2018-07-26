@@ -6,6 +6,7 @@ use EnMarche\MailerBundle\Client\MailRequestInterface;
 use EnMarche\MailerBundle\Client\PayloadFactoryInterface;
 use EnMarche\MailerBundle\Entity\Address;
 use EnMarche\MailerBundle\Entity\RecipientVars;
+use EnMarche\MailerBundle\Exception\InvalidMailRequestException;
 use Psr\Http\Message\ResponseInterface;
 
 /**
@@ -33,15 +34,15 @@ class MailjetPayloadFactory implements PayloadFactoryInterface
             $payload['Headers']['Reply-To'] = $this->formatAddress($replyTo);
         }
 
-        if ($mailRequest->hasCopyRecipients()) {
-            if ($mailRequest->getCampaign()) {
-                throw new \LogicException(\sprintf('A campaign mail request (id: %d, campaign: %s) cannot have CC recipients.', $mailRequest->getId(), $mailRequest->getCampaign()));
+        if ($mailRequest->getCampaign()) {
+            if ($mailRequest->hasCopyRecipients()) {
+                throw new InvalidMailRequestException(\sprintf('A campaign mail request (id: %d, campaign: "%s") cannot have copy recipients.', $mailRequest->getId(), $mailRequest->getCampaign()));
             }
 
-            return $this->createTransactionalPayload($mailRequest, $payload);
+            return $this->createCampaignPayload($mailRequest, $payload);
         }
 
-        return $this->createCampaignPayload($mailRequest, $payload);
+        return $this->createTransactionalPayload($mailRequest, $payload);
     }
 
     /**
@@ -57,10 +58,10 @@ class MailjetPayloadFactory implements PayloadFactoryInterface
         $recipientsCount = $mailRequest->getRecipientsCount();
 
         if ($recipientsCount > 1) {
-            throw new \LogicException(\sprintf('The mail request (id: %d) has no campaign but more than one recipient.', $mailRequest->getId()));
+            throw new InvalidMailRequestException(\sprintf('The mail request (id: %d) has no campaign but more than one recipient.', $mailRequest->getId()));
         }
         if ($recipientsCount === 0) {
-            throw new \LogicException(\sprintf('The mail request (id: %d) has no recipient.', $mailRequest->getId()));
+            throw new InvalidMailRequestException(\sprintf('The mail request (id: %d) has no recipient.', $mailRequest->getId()));
         }
 
         foreach ($mailRequest->getRecipientVars() as $recipient) {
@@ -83,7 +84,7 @@ class MailjetPayloadFactory implements PayloadFactoryInterface
         $templateVars = $mailRequest->getTemplateVars();
 
         foreach ($mailRequest->getRecipientVars() as $recipient) {
-            $payload['Recipients'] = $this->createRecipient($recipient, $templateVars);
+            $payload['Recipients'][] = $this->createRecipient($recipient, $templateVars);
         }
 
         return $payload;

@@ -5,6 +5,8 @@ namespace EnMarche\MailerBundle\Consumer;
 use Doctrine\ORM\EntityManagerInterface;
 use EnMarche\MailerBundle\Client\MailClientInterface;
 use EnMarche\MailerBundle\Client\MailRequestInterface;
+use EnMarche\MailerBundle\Exception\InvalidMailRequestException;
+use EnMarche\MailerBundle\Exception\InvalidMailResponseException;
 use EnMarche\MailerBundle\Repository\MailRequestRepository;
 use GuzzleHttp\Exception\GuzzleException;
 use OldSound\RabbitMqBundle\RabbitMq\ConsumerInterface;
@@ -64,7 +66,21 @@ class MailRequestConsumer implements ConsumerInterface
                 'exception' => $e,
             ]);
 
+            // Should be a network problem, retry later.
             return ConsumerInterface::MSG_REJECT_REQUEUE;
+        } catch (InvalidMailRequestException $e) {
+            $this->logger->error($e->getMessage(), ['mail_request' => $mailRequest, 'exception' => $e]);
+
+            return ConsumerInterface::MSG_REJECT;
+        } catch (InvalidMailResponseException $e) {
+            $this->logger->error($e->getMessage(), ['mail_request' => $mailRequest, 'exception' => $e]);
+
+            if ($e->isServerError()) {
+                // Server may be down, retry later.
+                return ConsumerInterface::MSG_REJECT_REQUEUE;
+            }
+
+            return ConsumerInterface::MSG_REJECT;
         }
 
         $this->entityManager->flush();

@@ -46,6 +46,11 @@ class Mail implements MailInterface
         $this->templateVars = $templateVars;
     }
 
+    public function getApp(): string
+    {
+        return $this->app;
+    }
+
     /**
      * {@inheritdoc}
      */

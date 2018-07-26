@@ -10,7 +10,6 @@ use OldSound\RabbitMqBundle\RabbitMq\ConsumerInterface;
 use OldSound\RabbitMqBundle\RabbitMq\ProducerInterface;
 use PhpAmqpLib\Message\AMQPMessage;
 use Psr\Log\LoggerInterface;
-use Psr\Log\NullLogger;
 
 /**
  * Responsible for transforming common app mails to requests entities that will be ultimately sent to the SAAS.
@@ -37,7 +36,7 @@ class MailConsumer implements ConsumerInterface
         $this->routingKey = $routingKey;
         $this->entityManager = $entityManager;
         $this->mailRequestFactory = $mailRequestFactory;
-        $this->logger = $logger ?: new NullLogger();
+        $this->logger = $logger;
     }
 
     /**
@@ -69,6 +68,10 @@ class MailConsumer implements ConsumerInterface
             ]);
 
             return ConsumerInterface::MSG_REJECT_REQUEUE;
+        } catch (\Throwable $e) {
+            $this->logger->error('Something went wrong: '.$e->getMessage(), ['mail' => $mail, 'exception' => $e]);
+
+            return ConsumerInterface::MSG_REJECT;
         }
 
         $this->producer->publish($request->getId(), $this->routingKey);
