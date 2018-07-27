@@ -2,7 +2,7 @@
 
 namespace EnMarche\MailerBundle\DependencyInjection;
 
-use EnMarche\MailerBundle\Transporter\TransporterType;
+use EnMarche\MailerBundle\Mailer\TransporterType;
 use Symfony\Component\Config\Definition\Builder\ArrayNodeDefinition;
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Symfony\Component\Config\Definition\ConfigurationInterface;

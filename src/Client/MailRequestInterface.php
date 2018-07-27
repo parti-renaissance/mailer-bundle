@@ -10,6 +10,10 @@ interface MailRequestInterface
 {
     public function getId(): ?int;
 
+    public function getApp(): string;
+
+    public function getType(): string;
+
     public function getReplyTo(): ?Address;
 
     public function getTemplateName(): string;

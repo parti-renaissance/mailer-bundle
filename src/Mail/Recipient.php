@@ -13,9 +13,9 @@ class Recipient implements RecipientInterface
         $this->name = $name;
         $this->email = $email;
 
-        foreach ($templateVars as $var) {
-            if ('' !== (string) $var) {
-                $this->templateVars[] = $var;
+        foreach ($templateVars as $varName => $varValue) {
+            if ('' !== (string) $varName && '' !== (string) $varValue) {
+                $this->templateVars[$varName] = $varValue;
             }
         }
     }

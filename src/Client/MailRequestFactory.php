@@ -1,8 +1,7 @@
 <?php
 
-namespace EnMarche\MailerBundle\Factory;
+namespace EnMarche\MailerBundle\Client;
 
-use EnMarche\MailerBundle\Client\MailRequestInterface;
 use EnMarche\MailerBundle\Entity\Address;
 use EnMarche\MailerBundle\Entity\MailRequest;
 use EnMarche\MailerBundle\Entity\MailVars;
@@ -36,7 +35,9 @@ class MailRequestFactory implements MailRequestFactoryInterface
 
     private function createMailVars(MailInterface $mail): MailVars
     {
-        if ($vars = $this->mailVarsRepository->findOneForCampaign($mail->getChunkId())) {
+        $chunkId = $mail->getChunkId();
+
+        if ($chunkId && $vars = $this->mailVarsRepository->findOneForCampaign($chunkId)) {
             return $vars;
         }
 

@@ -96,6 +96,7 @@ class MailjetPayloadFactoryTest extends TestCase
         $recipient2Email = 'recipient_2_email';
         $recipient2Vars = ['recipient_var' => 'test_2'];
         $replyToEmail = 'reply_to_email';
+        $templateVars = ['template_var' => 'test_a', 'recipient_var' => 'default must be overridden'];
 
         $expectedRequestPayload = [
             'MJ-TemplateID' => 'dummy',
@@ -105,11 +106,11 @@ class MailjetPayloadFactoryTest extends TestCase
                 [
                     'Email' => $recipient1Email,
                     'Name' => $recipient1Name,
-                    'Vars' => $recipient1Vars,
+                    'Vars' => \array_merge($templateVars, $recipient1Vars),
                 ],
                 [
                     'Email' => $recipient2Email,
-                    'Vars' => $recipient2Vars,
+                    'Vars' => \array_merge($templateVars, $recipient2Vars),
                 ],
             ],
         ];
@@ -121,7 +122,8 @@ class MailjetPayloadFactoryTest extends TestCase
             ],
             [/* no cc */],
             [/* no bcc */],
-            $this->getAddress($replyToEmail)
+            $this->getAddress($replyToEmail),
+            $templateVars
         );
         $mailRequest->campaign = $this->createMock(UuidInterface::class);
 
@@ -172,20 +174,22 @@ class MailjetPayloadFactoryTest extends TestCase
         array $to = [],
         array $cc = [],
         array $bcc = [],
-        Address $replyTo = null
+        Address $replyTo = null,
+        array $templateVars = null
     ): MailRequestInterface
     {
-        return new class($to, $cc, $bcc, $replyTo) extends DummyMailRequest
+        return new class($to, $cc, $bcc, $replyTo, $templateVars) extends DummyMailRequest
         {
             public $id = 1;
             public $campaign;
 
-            public function __construct(array $to, array $cc, array $bcc, ?Address $replyTo)
+            public function __construct(array $to, array $cc, array $bcc, ?Address $replyTo, array $templateVars = null)
             {
                 $this->recipientVars = $to;
                 $this->ccRecipients = $cc;
                 $this->bccRecipients = $bcc;
                 $this->replyTo = $replyTo;
+                $this->templateVars = $templateVars;
             }
         };
     }

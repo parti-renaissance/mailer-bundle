@@ -1,15 +1,18 @@
 <?php
 
-namespace EnMarche\MailerBundle\Factory;
+namespace EnMarche\MailerBundle\Mail;
 
-use EnMarche\MailerBundle\Mail\MailInterface;
-use EnMarche\MailerBundle\Mail\RecipientInterface;
+use EnMarche\MailerBundle\Exception\InvalidMailClassException;
+use EnMarche\MailerBundle\Exception\InvalidMailException;
 
 interface MailFactoryInterface
 {
     /**
      * @param RecipientInterface[] $to
      * @param string[]             $templateVars
+     *
+     * @throws InvalidMailClassException
+     * @throws InvalidMailException
      */
     public function createForClass(
         string $mailClass,

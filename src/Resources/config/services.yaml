@@ -4,9 +4,9 @@ services:
         autoconfigure: true
         public: false
 
-    EnMarche\MailerBundle\Transporter\RabbitMQTransporter: ~
+    EnMarche\MailerBundle\Mailer\Transporter\RabbitMQTransporter: ~
 
-    enmarche.mailer.transporter.rmq: '@EnMarche\MailerBundle\Transporter\RabbitMQTransporter'
+    enmarche.mailer.transporter.rmq: '@EnMarche\MailerBundle\Mailer\Transporter\RabbitMQTransporter'
 
     EnMarche\MailerBundle\Mailer\Mailer: ~
 

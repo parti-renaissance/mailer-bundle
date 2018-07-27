@@ -4,7 +4,7 @@ namespace EnMarche\MailerBundle\Consumer;
 
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
-use EnMarche\MailerBundle\Factory\MailRequestFactoryInterface;
+use EnMarche\MailerBundle\Client\MailRequestFactoryInterface;
 use EnMarche\MailerBundle\Mail\MailInterface;
 use OldSound\RabbitMqBundle\RabbitMq\ConsumerInterface;
 use OldSound\RabbitMqBundle\RabbitMq\ProducerInterface;
@@ -29,7 +29,7 @@ class MailConsumer implements ConsumerInterface
         string $routingKey,
         EntityManagerInterface $entityManager,
         MailRequestFactoryInterface $mailRequestFactory,
-        LoggerInterface $logger = null
+        LoggerInterface $logger
     )
     {
         $this->producer = $producer;
@@ -48,7 +48,7 @@ class MailConsumer implements ConsumerInterface
 
         if (!$mail instanceof MailInterface) {
             $this->logger->error(
-                \sprintf('Invalid unserialized message. Expected an implementation of %s.', MailInterface::class),
+                \sprintf('Invalid unserialized message. Expected an implementation of "%s".', MailInterface::class),
                 ['message' => $msg->body]
             );
 
@@ -69,12 +69,15 @@ class MailConsumer implements ConsumerInterface
 
             return ConsumerInterface::MSG_REJECT_REQUEUE;
         } catch (\Throwable $e) {
-            $this->logger->error('Something went wrong: '.$e->getMessage(), ['mail' => $mail, 'exception' => $e]);
+            $this->logger->error('Something went wrong: '.$e->getMessage(), [
+                'mail' => $mail,
+                'exception' => $e,
+            ]);
 
             return ConsumerInterface::MSG_REJECT;
         }
 
-        $this->producer->publish($request->getId(), $this->routingKey);
+        $this->producer->publish($request->getId(), $this->routingKey.'_'.$request->getType());
 
         return ConsumerInterface::MSG_ACK;
     }

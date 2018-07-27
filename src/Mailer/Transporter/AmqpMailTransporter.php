@@ -5,6 +5,7 @@ namespace EnMarche\MailerBundle\Transporter;
 use EnMarche\MailerBundle\Mail\ChunkableMailInterface;
 use EnMarche\MailerBundle\Mail\Mail;
 use EnMarche\MailerBundle\Mail\MailInterface;
+use EnMarche\MailerBundle\Mailer\TransporterInterface;
 use OldSound\RabbitMqBundle\RabbitMq\ProducerInterface;
 
 class AmqpMailTransporter implements TransporterInterface
@@ -20,7 +21,7 @@ class AmqpMailTransporter implements TransporterInterface
         $this->routingKey = $routingKey;
     }
 
-    public function schedule(MailInterface $mail): void
+    public function transport(MailInterface $mail): void
     {
         if ($mail instanceof ChunkableMailInterface) {
             foreach ($mail->chunk($this->chunkSize) as $chunk) {

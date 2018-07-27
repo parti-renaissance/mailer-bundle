@@ -1,11 +1,8 @@
 <?php
 
-namespace EnMarche\MailerBundle\Factory;
+namespace EnMarche\MailerBundle\Mail;
 
-use EnMarche\MailerBundle\Mail\MailBuilder;
-use EnMarche\MailerBundle\Mail\MailInterface;
-use EnMarche\MailerBundle\Mail\Recipient;
-use EnMarche\MailerBundle\Mail\RecipientInterface;
+use EnMarche\MailerBundle\Exception\InvalidMailException;
 
 class MailFactory implements MailFactoryInterface
 {
@@ -47,7 +44,7 @@ class MailFactory implements MailFactoryInterface
     ): MailInterface
     {
         if (!$to) {
-            throw new \InvalidArgumentException('Mail must have at least one recipient.');
+            throw new InvalidMailException('Mail must have at least one recipient.');
         }
 
         $builder = MailBuilder::create($mailClass, $this->app)

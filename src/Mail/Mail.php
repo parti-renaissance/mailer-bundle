@@ -78,6 +78,14 @@ class Mail implements MailInterface
     /**
      * {@inheritdoc}
      */
+    final public function hasCopyRecipients(): bool
+    {
+        return $this->ccRecipients || $this->bccRecipients;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     final public function getReplyTo(): ?RecipientInterface
     {
         return $this->replyTo;
@@ -96,7 +104,7 @@ class Mail implements MailInterface
      *
      * Converts short class name to snake case by default.
      */
-    final public function getTemplateName(): string
+    public function getTemplateName(): string
     {
         if ($this->templateName) {
             return $this->templateName;

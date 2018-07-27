@@ -19,8 +19,8 @@ class Toto implements TotoInterface
     /**
      * {@inheritdoc}
      */
-    public function heah(string $mailClass, array $to, array $context, $replyTo = null): void
+    public function heah(string $mailClass, array $to, $replyTo = null, array $templateVars = []): void
     {
-        $this->mailer->send($this->mailFactory->createForClass($mailClass, $to, $context));
+        $this->mailer->send($this->mailFactory->createForClass($mailClass, $to, $replyTo, $templateVars));
     }
 }

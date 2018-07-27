@@ -9,5 +9,5 @@ interface TotoInterface
     /**
      * @see MailFactoryInterface
      */
-    public function heah(string $mailClass, array $to, array $context, $replyTo = null): void;
+    public function heah(string $mailClass, array $to, $replyTo = null, array $templateVars = []): void;
 }

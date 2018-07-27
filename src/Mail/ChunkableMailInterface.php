@@ -3,7 +3,7 @@
 namespace EnMarche\MailerBundle\Mail;
 
 /**
- * To tag mails that should be chunked.
+ * To tag mails that must be chunked.
  */
 interface ChunkableMailInterface
 {

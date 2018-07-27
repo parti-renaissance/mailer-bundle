@@ -23,6 +23,11 @@ interface MailInterface
      */
     public function getBccRecipients(): array;
 
+    /**
+     * @return bool Whether the mail has cc or bcc recipients
+     */
+    public function hasCopyRecipients(): bool;
+
     public function getReplyTo(): ?RecipientInterface;
 
     /**
@@ -39,6 +44,9 @@ interface MailInterface
      */
     public function getType(): string;
 
+    /**
+     * Allows to identify all chunks from a same original mail.
+     */
     public function getChunkId(): ?UuidInterface;
 
     /**

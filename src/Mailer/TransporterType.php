@@ -1,6 +1,8 @@
 <?php
 
-namespace EnMarche\MailerBundle\Transporter;
+namespace EnMarche\MailerBundle\Mailer;
+
+use EnMarche\MailerBundle\Transporter\AmqpMailTransporter;
 
 final class TransporterType
 {
@@ -9,4 +11,8 @@ final class TransporterType
     public const CLASSES = [
         self::AMQP => AmqpMailTransporter::class,
     ];
+
+    private function __construct()
+    {
+    }
 }

@@ -9,6 +9,8 @@ use Ramsey\Uuid\UuidInterface;
 class DummyMailRequest implements MailRequestInterface
 {
     protected $id;
+    protected $app = 'test';
+    protected $type = 'fake';
     protected $replyTo;
     protected $templateName = 'dummy';
     protected $templateVars = [];
@@ -25,6 +27,22 @@ class DummyMailRequest implements MailRequestInterface
     public function getId(): ?int
     {
         return $this->id;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getApp(): string
+    {
+        return $this->app;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getType(): string
+    {
+        return $this->type;
     }
 
     /**

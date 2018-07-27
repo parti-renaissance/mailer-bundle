@@ -75,14 +75,28 @@ class MailRequest implements MailRequestInterface
         $this->campaign = $vars->getCampaign(); // duplication to perform concurrency check
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function getId(): ?int
     {
         return $this->id;
     }
 
-    public function getVars(): MailVars
+    /**
+     * {@inheritdoc}
+     */
+    public function getApp(): string
     {
-        return $this->vars;
+        return $this->vars->getApp();
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getType(): string
+    {
+        return $this->vars->getType();
     }
 
     /**
@@ -95,6 +109,9 @@ class MailRequest implements MailRequestInterface
         return $this->recipientVars;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function getRecipientsCount(): int
     {
         return $this->recipientVars->count();
@@ -187,5 +204,10 @@ class MailRequest implements MailRequestInterface
     public function setResponsePayload(array $responsePayload): void
     {
         $this->responsePayload = $responsePayload;
+    }
+
+    public function getVars(): MailVars
+    {
+        return $this->vars;
     }
 }

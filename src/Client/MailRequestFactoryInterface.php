@@ -1,8 +1,7 @@
 <?php
 
-namespace EnMarche\MailerBundle\Factory;
+namespace EnMarche\MailerBundle\Client;
 
-use EnMarche\MailerBundle\Client\MailRequestInterface;
 use EnMarche\MailerBundle\Mail\MailInterface;
 
 interface MailRequestFactoryInterface

@@ -2,6 +2,8 @@
 
 namespace EnMarche\MailerBundle\Mail;
 
+use EnMarche\MailerBundle\Exception\InvalidMailClassException;
+
 interface MailBuilderInterface extends MailInterface
 {
     public function addToRecipient(RecipientInterface $recipient): self;
@@ -53,5 +55,8 @@ interface MailBuilderInterface extends MailInterface
      */
     public function getMail(): MailInterface;
 
+    /**
+     * @throws InvalidMailClassException
+     */
     public static function create(string $mailClass, string $app): self;
 }

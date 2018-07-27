@@ -38,7 +38,7 @@ class MailRequestConsumer implements ConsumerInterface
      */
     public function execute(AMQPMessage $msg)
     {
-        if (!\preg_match('/\d+/', $msg->body) || (int) $msg->body <= 0) {
+        if (!is_scalar($msg->body) || !\preg_match('/\d+/', $msg->body) || (int) $msg->body <= 0) {
             $this->logger->error('Invalid message. Expected positive integer.', ['message' => $msg->body]);
 
             return ConsumerInterface::MSG_REJECT;
