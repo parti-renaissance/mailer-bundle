@@ -8,18 +8,19 @@ A Symfony bundle to share email related tools between En-Marche applications.
  * Symfony 3.4 or 4.0 minimum
  * Composer
  
-### For producers (creating/scheduling emails)
+### For producers (Applications creating/scheduling mails)
  
  * RabbitMQ is the only transporter type provided for now
 
-### For consumers (treating/scheduling emails)
+### For consumers (Workers app transforming mails to mail requests)
 
  * RabbitMQ is the only consumer type provided for now
- 
-### For senders
 
- * An HTTP client is required
- 
+### For senders (Micro service send mail requests to SAAS)
+
+ * RabbitMQ is the only consumer type provided for now
+ * A Guzzle HTTP client is required
+
 ## Installation
 
 ```bash
@@ -37,8 +38,8 @@ To declare an app as such is done using the following configuration:
 # app/config/config.yml for Symfony 3.4
 # config/packages/en_marche_mailer.yaml for Symfony 4.x
 en_marche_mailer:
-    amqp_dsn: ~
-    amqp_mail_routing_key: ~
+    connexion:
+        amqp_mail_routing_key: ~
     producer:
         app_name: data-api
         default_campaign_chunk_size: 50 # default
@@ -50,8 +51,9 @@ en_marche_mailer:
             turlututu: # name
                 cc:
                     - [cc1@email.com, 'CC 1']
+                    - cc2@email.com
                 bcc:
-                    - ['%env(MAILER_SOME_DEBUG_CC_ADDRESS)%']
+                    - '%env(MAILER_SOME_DEBUG_CC_ADDRESS)%'
         #default_toto: turlututu
 ```
 

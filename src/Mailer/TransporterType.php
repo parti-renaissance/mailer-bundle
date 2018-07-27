@@ -12,6 +12,11 @@ final class TransporterType
         self::AMQP => AmqpMailTransporter::class,
     ];
 
+    public static function isValid(string $type)
+    {
+        return \in_array($type, self::CLASSES, true);
+    }
+
     private function __construct()
     {
     }
