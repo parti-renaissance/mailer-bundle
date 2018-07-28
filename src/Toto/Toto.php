@@ -2,7 +2,8 @@
 
 namespace EnMarche\MailerBundle\Toto;
 
-use EnMarche\MailerBundle\Factory\MailFactoryInterface;
+use EnMarche\MailerBundle\Mail\MailFactoryInterface;
+use EnMarche\MailerBundle\Mail\RecipientInterface;
 use EnMarche\MailerBundle\Mailer\MailerInterface;
 
 class Toto implements TotoInterface
@@ -19,7 +20,7 @@ class Toto implements TotoInterface
     /**
      * {@inheritdoc}
      */
-    public function heah(string $mailClass, array $to, $replyTo = null, array $templateVars = []): void
+    public function heah(string $mailClass, array $to, RecipientInterface $replyTo = null, array $templateVars = []): void
     {
         $this->mailer->send($this->mailFactory->createForClass($mailClass, $to, $replyTo, $templateVars));
     }

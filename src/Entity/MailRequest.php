@@ -71,7 +71,17 @@ class MailRequest implements MailRequestInterface
     public function __construct(MailVars $vars, array $recipientVars)
     {
         $this->vars = $vars;
-        $this->recipientVars = new ArrayCollection($recipientVars);
+        $this->recipientVars = new ArrayCollection();
+        foreach ($recipientVars as $recipient) {
+            if (!$recipient instanceof RecipientVars) {
+                throw new \InvalidArgumentException(\sprintf(
+                    'Expected an instance of "%s", but got %s".',
+                    RecipientVars::class,
+                    is_object($recipient) ? get_class($recipient) : gettype($recipient)
+                ));
+            }
+            $this->recipientVars->add($recipient);
+        }
         $this->campaign = $vars->getCampaign(); // duplication to perform concurrency check
     }
 

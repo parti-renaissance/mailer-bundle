@@ -3,7 +3,8 @@
 namespace EnMarche\MailerBundle\Tests\DependencyInjection;
 
 use EnMarche\MailerBundle\DependencyInjection\Configuration;
-use EnMarche\MailerBundle\Mailer\TransporterType;
+use EnMarche\MailerBundle\Mail\Mail;
+use EnMarche\MailerBundle\Mailer\Transporter\TransporterType;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Config\Definition\Processor;
 
@@ -51,13 +52,26 @@ class ConfigurationTest extends TestCase
 
     /**
      * @expectedException \Symfony\Component\Config\Definition\Exception\InvalidConfigurationException
-     * @expectedExceptionMessage The value "wrong" is not allowed for path "en_marche_mailer.producer.transporter.type". Permissible values: "amqp"
+     * @expectedExceptionMessage The value "wrong" is not allowed for path "en_marche_mailer.producer.transport.type". Permissible values: "amqp"
      */
     public function testProducerConfigRequiresValidTransporterType()
     {
         $producer = ['producer' => [
             'app_name' => 'test',
-            'transporter' => ['type' => 'wrong'],
+            'transport' => ['type' => 'wrong'],
+        ]];
+
+        $this->processor->processConfiguration($this->configuration, [$producer]);
+    }
+
+    /**
+     * @expectedException \Symfony\Component\Config\Definition\Exception\InvalidConfigurationException
+     * @expectedExceptionMessage Invalid configuration for path "en_marche_mailer": Current config needs AMQP connexion to transport mails.
+     */
+    public function testProducerConfigRequiresAMQPConnexion()
+    {
+        $producer = ['producer' => [
+            'app_name' => 'test',
         ]];
 
         $this->processor->processConfiguration($this->configuration, [$producer]);
@@ -65,52 +79,23 @@ class ConfigurationTest extends TestCase
 
     public function testProducerConfig()
     {
-        $producer = ['producer' => [
-            'app_name' => 'test',
-        ]];
+        $producer = [
+            'producer' => [
+                'app_name' => 'test',
+            ],
+            'amqp_connexion' => ['url' => 'amqp_dsn'],
+        ];
 
         $config = $this->processor->processConfiguration($this->configuration, [$producer]);
 
-        $expectedConfig = \array_merge_recursive($producer, [
-            'producer' => [
-                'enabled' => true,
-                'transporter' => [
-                    'type' => TransporterType::AMQP,
-                    'connexion_name' => 'mail',
-                ],
-                'default_toto' => 'default',
-                'totos' => [], // should have been added empty
-            ],
-        ], $this->getDefaultConfig());
+        $expectedConfig = \array_merge_recursive($producer, $this->getDefaultProducerConfig());
 
         $this->assertSame($expectedConfig, $config);
     }
 
     public function testProducerConfigWithTotos()
     {
-        $producer = ['producer' => [
-            'app_name' => 'test',
-            'totos' => [
-                'toto_1' => [
-                    'cc' => [
-                        ['cc_1_mail', 'cc_1_name'],
-                        ['cc_2_mail', 'cc_2_name'],
-                    ],
-                ],
-                'toto_2' => [
-                    'cc' => [
-                        ['cc_1_mail', 'cc_1_name'],
-                    ],
-                    'bcc' => [
-                        'bcc_1_mail',
-                    ],
-                ],
-            ],
-        ]];
-
-        $config = $this->processor->processConfiguration($this->configuration, [$producer]);
-
-        $expectedConfig = \array_merge([
+        $producer = [
             'producer' => [
                 'app_name' => 'test',
                 'totos' => [
@@ -119,25 +104,59 @@ class ConfigurationTest extends TestCase
                             ['cc_1_mail', 'cc_1_name'],
                             ['cc_2_mail', 'cc_2_name'],
                         ],
-                        'bcc' => [], // should have been added empty
                     ],
                     'toto_2' => [
                         'cc' => [
                             ['cc_1_mail', 'cc_1_name'],
                         ],
                         'bcc' => [
-                            ['bcc_1_mail'], // should have been casted to array
+                            'bcc_1_mail',
                         ],
                     ],
                 ],
-                'enabled' => true,
-                'transporter' => [
-                    'type' => TransporterType::AMQP,
-                    'connexion_name' => 'mail',
-                ],
-                'default_toto' => 'default',
             ],
-        ], $this->getDefaultConfig());
+            'amqp_connexion' => ['url' => 'amqp_dsn'],
+        ];
+
+        $config = $this->processor->processConfiguration($this->configuration, [$producer]);
+
+        $expectedConfig = \array_merge_recursive(
+            [
+                'producer' => [
+                    'app_name' => 'test',
+                    'totos' => [
+                        'toto_1' => [
+                            'cc' => [
+                                ['cc_1_mail', 'cc_1_name'],
+                                ['cc_2_mail', 'cc_2_name'],
+                            ],
+                        ],
+                        'toto_2' => [
+                            'cc' => [
+                                ['cc_1_mail', 'cc_1_name'],
+                            ],
+                        ],
+                    ],
+                ],
+                'amqp_connexion' => ['url' => 'amqp_dsn'],
+            ],
+            [
+                // Config should have added the following defaults
+                'producer' => [
+                    'totos' => [
+                        'toto_1' => [
+                            'bcc' => [],
+                        ],
+                        'toto_2' => [
+                            'bcc' => [
+                                ['bcc_1_mail'], // should have been casted to array
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+            $this->getDefaultProducerConfig()
+        );
 
         $this->assertSame($expectedConfig, $config);
     }
@@ -145,13 +164,26 @@ class ConfigurationTest extends TestCase
     private function getDefaultConfig(): array
     {
         return [
-            'connexion' => [
-                'name' => 'en_marche_mailer',
-                'mail_database_url' => '%env(EN_MARCHE_MAILER_DATABASE_URL)%',
-                'transport_dsn' => '%env(EN_MARCHE_MAILER_TRANSPORT_DSN)%',
-                'mail_route_key' => 'mails',
-                'mail_request_route_key' => 'mail_requests',
+            'amqp_connexion' => [],
+            'amqp_mail_route_key' => 'mails',
+            'amqp_mail_request_route_key' => 'mail_requests',
+        ];
+    }
+
+    private function getDefaultProducerConfig(): array
+    {
+        return [
+            'producer' => [
+                'enabled' => true,
+                'transport' => [
+                    'type' => TransporterType::AMQP,
+                    'chunk_size' => Mail::DEFAULT_CHUNK_SIZE,
+                ],
+                'default_toto' => 'default',
+                'totos' => [], // should have been added empty
             ],
+            'amqp_mail_route_key' => 'mails',
+            'amqp_mail_request_route_key' => 'mail_requests',
         ];
     }
 }

@@ -110,8 +110,28 @@ class MailVars
         $this->replyTo = $replyTo;
         $this->templateName = $templateName;
         $this->templateVars = $templateVars;
-        $this->ccRecipients = new ArrayCollection($ccRecipients);
-        $this->bccRecipients = new ArrayCollection($bccRecipients);
+        $this->ccRecipients = new ArrayCollection();
+        foreach ($ccRecipients as $ccRecipient) {
+            if (!$ccRecipient instanceof Address) {
+                throw new \InvalidArgumentException(\sprintf(
+                    'Expected an instance of "%s", but got "%s".',
+                    Address::class,
+                    is_object($ccRecipient) ? get_class($ccRecipient) : gettype($ccRecipient)
+                ));
+            }
+            $this->ccRecipients->add($ccRecipient);
+        }
+        $this->bccRecipients = new ArrayCollection();
+        foreach ($bccRecipients as $bccRecipient) {
+            if (!$bccRecipient instanceof Address) {
+                throw new \InvalidArgumentException(\sprintf(
+                    'Expected an instance of "%s", but got "%s".',
+                    Address::class,
+                    is_object($bccRecipient) ? get_class($bccRecipient) : gettype($bccRecipient)
+                ));
+            }
+            $this->bccRecipients->add($bccRecipient);
+        }
         $this->campaign = $campaign;
     }
 

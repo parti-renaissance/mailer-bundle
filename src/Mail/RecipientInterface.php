@@ -9,7 +9,7 @@ interface RecipientInterface
     public function getEmail(): string;
 
     /**
-     * @return string[]
+     * @return string[] The vars used to populate the template for that recipient
      */
     public function getTemplateVars(): array;
 }

@@ -3,7 +3,6 @@
 namespace EnMarche\MailerBundle\Mailer;
 
 use EnMarche\MailerBundle\Mail\MailInterface;
-use EnMarche\MailerBundle\Transporter\TransporterInterface;
 
 class Mailer implements MailerInterface
 {

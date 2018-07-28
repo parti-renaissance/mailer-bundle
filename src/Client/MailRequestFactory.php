@@ -81,10 +81,12 @@ class MailRequestFactory implements MailRequestFactoryInterface
 
     private function createAddressFromRecipient(RecipientInterface $recipient): Address
     {
-        if ($address = $this->addressRepository->findOneForEmail($recipient->getEmail())) {
+        $email = $recipient->getEmail();
+
+        if ($address = $this->addressRepository->findOneForEmail($email)) {
             return $address;
         }
 
-        return new Address($recipient->getEmail(), $recipient->getName());
+        return new Address($email, $recipient->getName());
     }
 }

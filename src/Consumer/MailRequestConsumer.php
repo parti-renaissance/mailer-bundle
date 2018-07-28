@@ -66,7 +66,7 @@ class MailRequestConsumer implements ConsumerInterface
                 'exception' => $e,
             ]);
 
-            // Should be a network problem, retry later.
+            // Should be a network or config problem, retry later after fix.
             return ConsumerInterface::MSG_REJECT_REQUEUE;
         } catch (InvalidMailRequestException $e) {
             $this->logger->error($e->getMessage(), ['mail_request' => $mailRequest, 'exception' => $e]);
@@ -76,7 +76,7 @@ class MailRequestConsumer implements ConsumerInterface
             $this->logger->error($e->getMessage(), ['mail_request' => $mailRequest, 'exception' => $e]);
 
             if ($e->isServerError()) {
-                // Server may be down, retry later.
+                // SAAS may be down, retry later.
                 return ConsumerInterface::MSG_REJECT_REQUEUE;
             }
 

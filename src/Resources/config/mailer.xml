@@ -1,0 +1,19 @@
+<?xml version="1.0" ?>
+<container xmlns="http://symfony.com/schema/dic/services"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+    <services>
+        <service id="en_marche_mailer.mailer.default" class="EnMarche\MailerBundle\Mailer\Mailer" public="false">
+            <argument type="service" id="EnMarche\MailerBundle\Mailer\TransporterInterface" />
+        </service>
+        <service id="EnMarche\MailerBundle\Mailer\MailerInterface" alias="en_marche_mailer.mailer.default" public="false" />
+        <service id="en_marche_mailer.mailer.transporter.amqp" class="EnMarche\MailerBundle\Mailer\Transporter\AmqpMailTransporter" public="false">
+            <argument /><!-- producer will be set by the extension -->
+            <argument /><!-- chunk size will be set by the extension -->
+            <argument /><!-- routing key will be set by the extension -->
+            <argument /><!-- logger will be set by the extension -->
+        </service>
+        <service id="en_marche_mailer.mailer.transporter.default" alias="en_marche_mailer.mailer.transporter.amqp" public="false" />
+        <service id="EnMarche\MailerBundle\Mailer\TransporterInterface" alias="en_marche_mailer.mailer.transporter.default" public="false" />
+    </services>
+</container>

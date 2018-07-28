@@ -9,6 +9,10 @@ class Mail implements MailInterface
 {
     public const TYPE_CAMPAIGN = 'campaign';
     public const TYPE_TRANSACTIONAL = 'transactional';
+    public const TYPES = [
+        self::TYPE_CAMPAIGN,
+        self::TYPE_TRANSACTIONAL,
+    ];
 
     public const DEFAULT_CHUNK_SIZE = 50;
 

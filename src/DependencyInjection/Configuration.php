@@ -2,8 +2,8 @@
 
 namespace EnMarche\MailerBundle\DependencyInjection;
 
-use EnMarche\MailerBundle\Exception\InvalidTransporterTypeException;
-use EnMarche\MailerBundle\Mailer\TransporterType;
+use EnMarche\MailerBundle\Mail\Mail;
+use EnMarche\MailerBundle\Mailer\Transporter\TransporterType;
 use Symfony\Component\Config\Definition\Builder\ArrayNodeDefinition;
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Symfony\Component\Config\Definition\ConfigurationInterface;
@@ -29,6 +29,16 @@ class Configuration implements ConfigurationInterface
                     return $config;
                 })
             ->end()
+            ->validate()
+                ->ifTrue(function ($config) {
+                    $useAMQPTransporter = isset($config['producer']['transport']['type'])
+                        && TransporterType::AMQP === $config['producer']['transport']['type']
+                    ;
+
+                    return $useAMQPTransporter && empty($config['amqp_connexion']);
+                })
+                ->thenInvalid('Current config needs AMQP connexion to transport mails.')
+            ->end()
         ;
 
         $this->addConnexionSection($rootNode);
@@ -43,14 +53,13 @@ class Configuration implements ConfigurationInterface
      * The connexion is required for all type of applications.
      *
      * A "producer" (sending mails) needs an internal transport (which defaults to AMQP):
-     *  - name: for the connexion created by OldSound bundle
-     *  - transport_dsn: the AMPQ dsn to use
-     *  - mail_route_key: the route on which to send mails
+     *  - amqp_connexion: array using same config as OldSound connexion
+     *  - amqp_mail_route_key: the route on which to send mails if
      *
-     * A "client" (consuming mail requests) needs a database to read/write mail requests, but also the same options as
-     * the producer above to consume requests from queues, only the routing option is different:
-     *  - mail_database_url
-     *  - mail_request_route_key: the route on which to consume mail requests
+     * A "client" (consuming mail requests) needs a database to read/update mail requests, only the routing option is
+     * different from above regading amqp:
+     *  - amqp_connexion: same as above
+     *  - amqp_mail_request_route_key: the route on which to consume mail requests
      *
      * A "consumer" (consuming mails to produce mail requests) needs both producer and sender options.
      */
@@ -58,16 +67,12 @@ class Configuration implements ConfigurationInterface
     {
         $rootNode
             ->children()
-                ->arrayNode('connexion')
-                    ->children()
-                        ->scalarNode('name')->defaultValue('en_marche_mailer')->end()
-                        ->scalarNode('mail_database_url')->defaultValue('%env(EN_MARCHE_MAILER_DATABASE_URL)%')->end()
-                        ->scalarNode('transport_dsn')->defaultValue('%env(EN_MARCHE_MAILER_TRANSPORT_DSN)%')->end()
-                        ->scalarNode('mail_route_key')->defaultValue('mails')->end()
-                        ->scalarNode('mail_request_route_key')->defaultValue('mail_requests')->end()
-                    ->end()
-                    ->addDefaultsIfNotSet()
+                ->arrayNode('amqp_connexion')
+                    ->variablePrototype()->info('See connexion config of OldSoundRabbitMqBundle.')->end()
                 ->end()
+                ->scalarNode('mail_database_url')->end()
+                ->scalarNode('amqp_mail_route_key')->defaultValue('mails')->end()
+                ->scalarNode('amqp_mail_request_route_key')->defaultValue('mail_requests')->end()
             ->end()
         ;
     }
@@ -80,16 +85,16 @@ class Configuration implements ConfigurationInterface
                     ->canBeEnabled()
                     ->children()
                         ->scalarNode('app_name')->isRequired()->end()
-                        ->arrayNode('transporter')
+                        ->arrayNode('transport')
+                            ->addDefaultsIfNotSet()
                             ->children()
                                 ->enumNode('type')
-                                    ->values(\array_keys(TransporterType::CLASSES))
                                     ->isRequired()
+                                    ->values(TransporterType::ALL)
                                     ->defaultValue(TransporterType::AMQP)
                                 ->end()
-                                ->scalarNode('connexion_name')->defaultValue('mail')->end()
+                                ->scalarNode('chunk_size')->defaultValue(Mail::DEFAULT_CHUNK_SIZE)->end()
                             ->end()
-                            ->addDefaultsIfNotSet()
                         ->end()
                         ->scalarNode('default_toto')->defaultValue('default')->end()
                         ->arrayNode('totos')
