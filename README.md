@@ -8,7 +8,7 @@ A Symfony bundle to share email related tools between En-Marche applications.
  * Symfony 3.4 or 4.0 minimum
  * Composer
  
-### For producers (Applications creating/scheduling mails)
+### For producers (Applications posting mails)
 
  * RabbitMQ is the only transporter type provided for now
  
@@ -60,14 +60,14 @@ en_marche_mailer:
             type: amqp # default
             chunk_size: 100 # overrides the default 50
 
-        totos:
-            turlututu: # name
+        mail_posts:
+            admin: # name
                 cc:
                     - [cc1@email.com, 'CC 1']
                     - cc2@email.com
                 bcc:
                     - '%env(MAILER_SOME_DEBUG_CC_ADDRESS)%'
-        #default_toto: turlututu
+        #default_mail_post: admin
 ```
 
 With the above, many services are created:
@@ -81,10 +81,10 @@ With the above, many services are created:
 
 However, they should not be used. Instead, you should rely on the following:
 
- * `en_marche_mailer.toto.default`, sends a custom mail class for the given model recipients and context. No cc or bcc.
-   Can be autowired with `EnMarche\MailerBundle\TotoInterface`.
- * `en_marche_mailer.toto.turlututu`, same a the previous one, but uses the configured factory to add cc and bcc.
-   Can be bind by the id. To autowire it by the interface, change the `default_toto` config key.
+ * `en_marche_mailer.mail_post.default`, sends a custom mail class for the given model recipients and context. No cc or bcc.
+   Can be autowired with `EnMarche\MailerBundle\MailPost\MailPostInterface`.
+ * `en_marche_mailer.mail_post.admin`, same a the previous one, but uses the configured factory to add cc and bcc.
+   Can be bind by the id. To autowire it by the interface, change the `default_mail_post` config key.
 
 ### Usage
 
@@ -117,11 +117,11 @@ class AdherentResetPasswordMail extends TransactionalMail
 
 Adding static methods to build recipients and template vars is a good way to keep application code clean.
 
-Then in a controller, listener or command, or whatever service needing to send that email, use the `TotoInterface`.
+Then in a controller, listener or command, or whatever service needing to send that email, use the `MailPostInterface`.
 
 The method signature is:
 ```php
-public function heah(string $mailClass, array $to, RecipientInterface $replyTo = null, array $templateVars = []): void;
+public function address(string $mailClass, array $to, RecipientInterface $replyTo = null, array $templateVars = []): void;
 ```
 
 It requires a mail class and an array of RecipientInterface, then optionally a Recipient to reply to and an array of
@@ -130,13 +130,13 @@ template vars.
 ```php
 // ...
 use App\Mail\AdherentResetPasswordMail;
-use EnMarche\MailerBundle\Toto\TotoInterface;
+use EnMarche\MailerBundle\MailPost\MailPostInterface;
 
-public function action(Request $request, Adherent $adherent, TotoInterface $toto)
+public function action(Request $request, Adherent $adherent, MailPostInterface $mailPost)
 {
     // ...
     
-    $toto->heah(
+    $mailPost->address(
         AdherentResetPasswordMail::class,
         [
             AdherentResetPasswordMail::createRecipientFor(
@@ -195,23 +195,23 @@ class EventInvitationMail extends CampaignMail
 }
 ```
 
-Given you bound the custom `TotoInterface` using:
+Given you bound the custom `MailPostInterface` using:
 ```yaml
 services:
     _defaults:
         # ...
         bind:
             # ...
-            $turlututuToto: '@en_marche_mailer.toto.turlututu'
+            $adminMailPost: '@en_marche_mailer.mail_post.admin'
 ```
 
 You are then able to do:
 ```php
-public function action(Request $request, Event $event, TotoInterface $turlututuToto)
+public function action(Request $request, Event $event, MailPostInterface $adminMailPost)
 {
     // ...
     
-    $turlututuToto->heah(
+    $adminMailPost->address(
         EventInvitationMail::class,
         EventInvitationMail::createRecipientForInvitees($invitees),
         EventInvitationMail::createReplyToFor($this->>getUser()),

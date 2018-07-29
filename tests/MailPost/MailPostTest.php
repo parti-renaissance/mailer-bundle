@@ -7,11 +7,11 @@ use EnMarche\MailerBundle\Mail\Recipient;
 use EnMarche\MailerBundle\Mailer\MailerInterface;
 use EnMarche\MailerBundle\Tests\Mail\TotoMail;
 use EnMarche\MailerBundle\Tests\Test\DummyMail;
-use EnMarche\MailerBundle\Toto\Toto;
+use EnMarche\MailerBundle\MailPost\MailPost;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
-class TotoTest extends TestCase
+class MailPostTest extends TestCase
 {
     /**
      * @var MockObject|MailerInterface
@@ -24,25 +24,25 @@ class TotoTest extends TestCase
     private $mailFactory;
 
     /**
-     * @var Toto
+     * @var MailPost
      */
-    private $toto;
+    private $mailPost;
 
     protected function setUp()
     {
         $this->mailer = $this->createMock(MailerInterface::class);
         $this->mailFactory = $this->createMock(MailFactoryInterface::class);
-        $this->toto = new Toto($this->mailer, $this->mailFactory);
+        $this->mailPost = new MailPost($this->mailer, $this->mailFactory);
     }
 
     protected function tearDown()
     {
         $this->mailer = null;
         $this->mailFactory = null;
-        $this->toto = null;
+        $this->mailPost = null;
     }
 
-    public function testHeah()
+    public function testAddress()
     {
         $mail = new DummyMail();
         $mailClass = TotoMail::class;
@@ -60,6 +60,6 @@ class TotoTest extends TestCase
             ->with($mail)
         ;
 
-        $this->toto->heah($mailClass, $to, $replyTo, $templateVars);
+        $this->mailPost->address($mailClass, $to, $replyTo, $templateVars);
     }
 }

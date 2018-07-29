@@ -27,11 +27,11 @@
         </service>
         <service id="EnMarche\MailerBundle\Mail\MailFactoryInterface" alias="en_marche_mailer.mail_factory.default" public="false" />
 
-        <!-- Toto -->
-        <service id="en_marche_mailer.toto.default" class="EnMarche\MailerBundle\Toto\Toto" public="false">
+        <!-- MailPost -->
+        <service id="en_marche_mailer.mail_post.default" class="EnMarche\MailerBundle\MailPost\MailPost" public="false">
             <argument type="service" id="EnMarche\MailerBundle\Mailer\MailerInterface" />
             <argument type="service" id="EnMarche\MailerBundle\Mail\MailFactoryInterface" />
         </service>
-        <service id="EnMarche\MailerBundle\Toto\TotoInterface" alias="en_marche_mailer.toto.default" public="false" />
+        <service id="EnMarche\MailerBundle\MailPost\MailPostInterface" alias="en_marche_mailer.mail_post.default" public="false" />
     </services>
 </container>

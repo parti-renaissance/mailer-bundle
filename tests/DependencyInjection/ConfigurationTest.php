@@ -79,19 +79,19 @@ class ConfigurationTest extends TestCase
         $this->assertSame($expectedConfig, $config);
     }
 
-    public function testProducerConfigWithTotos()
+    public function testProducerConfigWithMailPosts()
     {
         $producer = [
             'producer' => [
                 'app_name' => 'test',
-                'totos' => [
-                    'toto_1' => [
+                'mail_posts' => [
+                    'mail_post_1' => [
                         'cc' => [
                             ['cc_1_mail', 'cc_1_name'],
                             ['cc_2_mail', 'cc_2_name'],
                         ],
                     ],
-                    'toto_2' => [
+                    'mail_post_2' => [
                         'cc' => [
                             ['cc_1_mail', 'cc_1_name'],
                         ],
@@ -110,14 +110,14 @@ class ConfigurationTest extends TestCase
             [
                 'producer' => [
                     'app_name' => 'test',
-                    'totos' => [
-                        'toto_1' => [
+                    'mail_posts' => [
+                        'mail_post_1' => [
                             'cc' => [
                                 ['cc_1_mail', 'cc_1_name'],
                                 ['cc_2_mail', 'cc_2_name'],
                             ],
                         ],
-                        'toto_2' => [
+                        'mail_post_2' => [
                             'cc' => [
                                 ['cc_1_mail', 'cc_1_name'],
                             ],
@@ -129,11 +129,11 @@ class ConfigurationTest extends TestCase
             [
                 // Config should have added the following defaults
                 'producer' => [
-                    'totos' => [
-                        'toto_1' => [
+                    'mail_posts' => [
+                        'mail_post_1' => [
                             'bcc' => [],
                         ],
-                        'toto_2' => [
+                        'mail_post_2' => [
                             'bcc' => [
                                 ['bcc_1_mail'], // should have been casted to array
                             ],
@@ -165,8 +165,8 @@ class ConfigurationTest extends TestCase
                     'type' => TransporterType::AMQP,
                     'chunk_size' => Mail::DEFAULT_CHUNK_SIZE,
                 ],
-                'default_toto' => 'default',
-                'totos' => [], // should have been added empty
+                'default_mail_post' => 'default',
+                'mail_posts' => [], // should have been added empty
             ],
             'amqp_mail_route_key' => 'mails',
             'amqp_mail_request_route_key' => 'mail_requests',

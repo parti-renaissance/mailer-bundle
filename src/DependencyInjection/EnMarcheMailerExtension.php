@@ -7,9 +7,9 @@ use EnMarche\MailerBundle\Mail\MailFactory;
 use EnMarche\MailerBundle\Mail\MailFactoryInterface;
 use EnMarche\MailerBundle\Mailer\MailerInterface;
 use EnMarche\MailerBundle\Mailer\Transporter\TransporterType;
-use EnMarche\MailerBundle\Tests\Test\DebugToto;
-use EnMarche\MailerBundle\Toto\Toto;
-use EnMarche\MailerBundle\Toto\TotoInterface;
+use EnMarche\MailerBundle\Tests\Test\DebugMailPost;
+use EnMarche\MailerBundle\MailPost\MailPost;
+use EnMarche\MailerBundle\MailPost\MailPostInterface;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\Alias;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -105,7 +105,7 @@ class EnMarcheMailerExtension extends ConfigurableExtension implements PrependEx
                 $container->setAlias('en_marche_mailer.mailer.transporter.default', $transporterId);
         }
 
-        $this->configureToto($container, $config['app_name'], $config['totos'], $config['default_toto']);
+        $this->configureMailPost($container, $config['app_name'], $config['mail_posts'], $config['default_mail_post']);
     }
 
     /**
@@ -155,30 +155,30 @@ class EnMarcheMailerExtension extends ConfigurableExtension implements PrependEx
         ;
     }
 
-    private function configureToto(ContainerBuilder $container, string $appName, array $totos, string $defaultTotoName): void
+    private function configureMailPost(ContainerBuilder $container, string $appName, array $mailPosts, string $defaultPostName): void
     {
-        $defaultToto = $container->findDefinition(TotoInterface::class);
+        $defaultMailPost = $container->findDefinition(MailPostInterface::class);
         $defaultMailFactory = $container->findDefinition(MailFactoryInterface::class);
 
         // ensure a default key is set
-        foreach (\array_merge(['default' => []], $totos) as $totoName => $totoConfig) {
-            $isDefault = 'default' === $totoName;
+        foreach (\array_merge(['default' => []], $mailPosts) as $mailPostName => $mailPostConfig) {
+            $isDefault = 'default' === $mailPostName;
             $mailFactory = $isDefault ? $defaultMailFactory : new Definition(MailFactory::class);
-            $toto = $isDefault ? $defaultToto : new Definition($this->debug ? DebugToto::class : Toto::class);
+            $mailPost = $isDefault ? $defaultMailPost : new Definition($this->debug ? DebugMailPost::class : MailPost::class);
 
             $mailFactory
                 ->addArgument($appName)
-                ->addArgument($totoConfig['cc'] ?? [])
-                ->addArgument($totoConfig['bcc'] ?? [])
+                ->addArgument($mailPostConfig['cc'] ?? [])
+                ->addArgument($mailPostConfig['bcc'] ?? [])
             ;
 
             if (!$isDefault) {
-                $mailFactoryId = "en_marche_mailer.mail_factory.$totoName";
+                $mailFactoryId = "en_marche_mailer.mail_factory.$mailPostName";
 
                 $container->setDefinition($mailFactoryId, $mailFactory)
                     ->setPublic(false)
                 ;
-                $container->setDefinition("en_marche_mailer.toto.$totoName", $toto)
+                $container->setDefinition("en_marche_mailer.mail_post.$mailPostName", $mailPost)
                     ->addArgument(new Reference(MailerInterface::class))
                     ->addArgument(new Reference($mailFactoryId))
                     ->setPublic(false)
@@ -186,19 +186,19 @@ class EnMarcheMailerExtension extends ConfigurableExtension implements PrependEx
             }
 
             if ($this->debug) {
-                $toto
-                    ->addArgument($totoName)
+                $mailPost
+                    ->addArgument($mailPostName)
                     ->setPublic(true)
                 ;
                 if ($isDefault) {
-                    $defaultToto->setClass(DebugToto::class);
+                    $defaultMailPost->setClass(DebugMailPost::class);
                 }
             }
         }
 
-        if ('default' !== $defaultTotoName) {
-            $container->setAlias(TotoInterface::class, new Alias('en_marche_mailer.toto.'.$defaultTotoName, $this->debug));
-            $container->setAlias(MailFactoryInterface::class, new Alias('en_marche_mailer.mail_factory.'.$defaultTotoName, $this->debug));
+        if ('default' !== $defaultPostName) {
+            $container->setAlias(MailPostInterface::class, new Alias("en_marche_mailer.mail_post.$defaultPostName", $this->debug));
+            $container->setAlias(MailFactoryInterface::class, new Alias("en_marche_mailer.mail_factory.$defaultPostName", $this->debug));
         }
     }
 

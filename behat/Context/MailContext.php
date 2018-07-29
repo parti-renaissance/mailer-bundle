@@ -3,20 +3,20 @@
 use Behat\MinkExtension\Context\RawMinkContext;
 use Behat\Symfony2Extension\Context\KernelDictionary;
 use EnMarche\MailerBundle\Mail\MailInterface;
-use EnMarche\MailerBundle\Tests\Test\DebugToto;
-use EnMarche\MailerBundle\Toto\TotoInterface;
+use EnMarche\MailerBundle\Tests\Test\DebugMailPost;
+use EnMarche\MailerBundle\MailPost\MailPostInterface;
 
 class MailContext extends RawMinkContext
 {
     use KernelDictionary;
 
     /**
-     * @Given I should have :number email(s)( for class :mailClass)?( sent with :totoName)?
+     * @Given I should have :number email(s)( for class :mailClass)?( sent with :mailPostName)?
      */
-    public function iShouldHaveMessages(int $number, string $mailClass = null, string $totoName = null)
+    public function iShouldHaveMessages(int $number, string $mailClass = null, string $mailPostName = null)
     {
-        $toto = $this->getToto($totoName);
-        $count = $mailClass ? $toto->getMailsCount() : $toto->getMailsCountForClass($mailClass);
+        $mailPost = $this->getMailPost($mailPostName);
+        $count = $mailClass ? $mailPost->getMailsCount() : $mailPost->getMailsCountForClass($mailClass);
 
         if ($number !== $count) {
             throw new \RuntimeException(sprintf('Found %d email(s) instead of %d.', $count, $number));
@@ -24,20 +24,18 @@ class MailContext extends RawMinkContext
     }
 
     /**
-     * @Given I should have 1 email :mailClass( sent with :totoName) for :recipient with vars:
+     * @Given I should have 1 email :mailClass( sent with :mailPostName) for :recipient with vars:
      */
-    public function iShouldHaveEmailForWithPayload(string $maiClass, string $recipient, array $vars, string $totoName = null)
+    public function iShouldHaveEmailForWithPayload(string $maiClass, string $recipient, array $vars, string $mailPostName = null)
     {
         $mail = null;
-        $toto = $this->getToto($totoName);
+        $mailPost = $this->getMailPost($mailPostName);
 
-        foreach ($this->getToto())
-
-        if (1 !== $toto->getMailsCountForClass($maiClass)) {
-            throw new \RuntimeException(sprintf('I found %s email(s) instead of 1', $toto->getMailsCount($maiClass)));
+        if (1 !== $mailPost->getMailsCountForClass($maiClass)) {
+            throw new \RuntimeException(sprintf('I found %s email(s) instead of 1', $mailPost->getMailsCount($maiClass)));
         }
 
-        foreach ($toto->getMailsForClass($maiClass) as $mail) {
+        foreach ($mailPost->getMailsForClass($maiClass) as $mail) {
             if (1 !== \count($recipients = $mail->getToRecipients())) {
                 throw new \RuntimeException('Mail has no recipient.');
             }
@@ -51,30 +49,30 @@ class MailContext extends RawMinkContext
     }
 
     /**
-     * @When I click on the email link :emailVariableName (sent with :totoName)?
+     * @When I click on the email link :templateVars (sent with :mailPostName)?
      */
-    public function iClickOnTheEmailLink($emailVariableName, $totoName = null)
+    public function iClickOnTheEmailLink($templateVars, $mailPostName = null)
     {
-        $toto = $this->getToto($totoName);
+        $mailPost = $this->getMailPost($mailPostName);
 
-        $lastMail = $toto->getLastSentMail();
+        $lastMail = $mailPost->getLastSentMail();
 
         if (!$lastMail instanceof MailInterface) {
-            throw new \RuntimeException(\sprintf('No email was previously sent with toto "%s".', $totoName));
+            throw new \RuntimeException(\sprintf('No email was previously sent with mail post "%s".', $mailPostName));
         }
 
         $recipients = $lastMail->getToRecipients();
 
         if (!\count($recipients)) {
-            throw new \RuntimeException(\sprintf('There is no recipient in the last mail sent with toto "%s".', $totoName));
+            throw new \RuntimeException(\sprintf('There is no recipient in the last mail sent with mail post "%s".', $mailPostName));
         }
 
-        $link = $recipients[0]->getTemplateVars()[$emailVariableName] ?? null;
+        $link = $recipients[0]->getTemplateVars()[$templateVars] ?? null;
 
         if (!$link) {
             throw new \RuntimeException(sprintf(
                 'There is no variable or no data called %s. Variables availables are %s.',
-                $emailVariableName,
+                $templateVars,
                 implode(', ', array_keys($recipients[0]->getTemplateVars()))
             ));
         }
@@ -82,14 +80,14 @@ class MailContext extends RawMinkContext
         $this->visitPath($link);
     }
 
-    private function getToto(string $name = null): DebugToto
+    private function getMailPost(string $name = null): DebugMailPost
     {
-        $toto = $this->getContainer()->get($name ? "en_marche_mailer.toto.$name" : TotoInterface::class);
+        $mailPost = $this->getContainer()->get($name ? "en_marche_mailer.mailPost.$name" : MailPostInterface::class);
 
-        if (!$toto instanceof DebugToto) {
-            throw new \LogicException(\sprintf('Expected an instance of "%s", but got "%s". Are you running in test environment?', DebugToto::class, get_class($toto)));
+        if (!$mailPost instanceof DebugMailPost) {
+            throw new \LogicException(\sprintf('Expected an instance of "%s", but got "%s". Are you running in test environment?', DebugMailPost::class, get_class($mailPost)));
         }
 
-        return $toto;
+        return $mailPost;
     }
 }

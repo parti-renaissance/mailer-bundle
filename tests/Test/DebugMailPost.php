@@ -8,23 +8,23 @@ use EnMarche\MailerBundle\Mail\MailInterface;
 use EnMarche\MailerBundle\Mail\RecipientInterface;
 use EnMarche\MailerBundle\Mailer\Mailer;
 use EnMarche\MailerBundle\Mailer\MailerInterface;
-use EnMarche\MailerBundle\Toto\TotoInterface;
+use EnMarche\MailerBundle\MailPost\MailPostInterface;
 
-class DebugToto implements TotoInterface
+class DebugMailPost implements MailPostInterface
 {
-    private $totoName;
     private $mails = [];
+    private $lastSentMail;
+    private $mailPostName;
     private $mailer;
     private $mailFactory;
-    private $lastSentMail;
 
     public function __construct(
         MailerInterface $mailer = null,
         MailFactoryInterface $mailFactory = null,
-        string $totoName = 'default'
+        string $mailPostName = 'default'
     )
     {
-        $this->totoName = $totoName;
+        $this->mailPostName = $mailPostName;
         $this->mailer = $mailer ?: new Mailer(new NullMailTransporter());
         $this->mailFactory = $mailFactory ?: new MailFactory('test');
     }
@@ -32,7 +32,7 @@ class DebugToto implements TotoInterface
     /**
      * {@inheritdoc}
      */
-    public function heah(string $mailClass, array $to, RecipientInterface $replyTo = null, array $templateVars = []): void
+    public function address(string $mailClass, array $to, RecipientInterface $replyTo = null, array $templateVars = []): void
     {
         $mail = $this->mailFactory->createForClass($mailClass, $to, $replyTo, $templateVars);
 
@@ -41,9 +41,9 @@ class DebugToto implements TotoInterface
         $this->mailer->send($mail);
     }
 
-    public function getTotoName(): string
+    public function getMailPostName(): string
     {
-        return $this->totoName;
+        return $this->mailPostName;
     }
 
     public function getMailsCount(): int

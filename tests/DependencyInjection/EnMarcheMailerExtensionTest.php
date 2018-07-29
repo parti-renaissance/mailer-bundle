@@ -9,9 +9,9 @@ use EnMarche\MailerBundle\Mailer\Mailer;
 use EnMarche\MailerBundle\Mailer\MailerInterface;
 use EnMarche\MailerBundle\Mailer\TransporterInterface;
 use EnMarche\MailerBundle\Mailer\Transporter\AmqpMailTransporter;
-use EnMarche\MailerBundle\Tests\Test\DebugToto;
-use EnMarche\MailerBundle\Toto\Toto;
-use EnMarche\MailerBundle\Toto\TotoInterface;
+use EnMarche\MailerBundle\Tests\Test\DebugMailPost;
+use EnMarche\MailerBundle\MailPost\MailPost;
+use EnMarche\MailerBundle\MailPost\MailPostInterface;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -55,12 +55,12 @@ class EnMarcheMailerExtensionTest extends TestCase
         $this->assertContainerHasAlias(false, MailerInterface::class);
         $this->assertContainerHasAlias(false, TransporterInterface::class);
         $this->assertContainerHasAlias(false, MailFactoryInterface::class);
-        $this->assertContainerHasAlias(false, TotoInterface::class);
+        $this->assertContainerHasAlias(false, MailPostInterface::class);
         $this->assertContainerHasDefinition(false, 'en_marche_mailer.mailer.default');
         $this->assertContainerHasDefinition(false, 'en_marche_mailer.mailer.transporter.amqp');
         $this->assertContainerHasDefinition(false, 'old_sound_rabbit_mq.en_marche_mail_producer');
         $this->assertContainerHasMailFactory(false, 'en_marche_mailer.mail_factory.default');
-        $this->assertContainerHasToto(false, 'en_marche_mailer.toto.default');
+        $this->assertContainerHasMailPost(false, 'en_marche_mailer.mail_post.default');
     }
 
     /**
@@ -109,12 +109,12 @@ class EnMarcheMailerExtensionTest extends TestCase
         $this->assertContainerHasAlias(true, 'en_marche_mailer.mailer.transporter.default');
         $this->assertContainerHasAlias(true, TransporterInterface::class);
         $this->assertContainerHasAlias(true, MailFactoryInterface::class);
-        $this->assertContainerHasAlias(true, TotoInterface::class);
+        $this->assertContainerHasAlias(true, MailPostInterface::class);
         $this->assertContainerHasDefinition(true, 'en_marche_mailer.mailer.default');
         $this->assertContainerHasDefinition(true, 'en_marche_mailer.mailer.transporter.amqp');
         $this->assertContainerHasDefinition(true, 'old_sound_rabbit_mq.en_marche_mail_producer', false);
         $this->assertContainerHasMailFactory(true, 'en_marche_mailer.mail_factory.default', true);
-        $this->assertContainerHasToto(true, 'en_marche_mailer.toto.default', true);
+        $this->assertContainerHasMailPost(true, 'en_marche_mailer.mail_post.default', true);
 
         $this->assertCount(
             7,
@@ -167,12 +167,12 @@ class EnMarcheMailerExtensionTest extends TestCase
         $this->assertReference('old_sound_rabbit_mq.connexion.en_marche_mailer', $mailProducer->getArgument(0));
     }
 
-    public function testProducerConfigWithCustomTotos()
+    public function testProducerConfigWithCustomMailPosts()
     {
         $config = [
             'producer' => [
                 'app_name' => 'test',
-                'totos' => [
+                'mail_posts' => [
                     'custom_1' => [
                         'cc' => [
                             'cc_1', // should be normalized to array
@@ -209,7 +209,7 @@ class EnMarcheMailerExtensionTest extends TestCase
         $this->assertCount(
             8 + 4,
             $this->container->getDefinitions(),
-            '2 definitions more than previous test for configured totos, and another 2 for their mail factories.'
+            '2 definitions more than previous test for configured mail posts, and another 2 for their mail factories.'
         );
 
         $this->assertContainerHasMailFactory(
@@ -244,34 +244,34 @@ class EnMarcheMailerExtensionTest extends TestCase
                 ['bcc_1', 'bcc_name'],
             ]
         );
-        $this->assertContainerHasToto(true, 'en_marche_mailer.toto.default');
-        $this->assertContainerHasToto(
+        $this->assertContainerHasMailPost(true, 'en_marche_mailer.mail_post.default');
+        $this->assertContainerHasMailPost(
             true,
-            'en_marche_mailer.toto.custom_1',
+            'en_marche_mailer.mail_post.custom_1',
             false,
             'en_marche_mailer.mail_factory.custom_1'
         );
-        $this->assertContainerHasToto(
+        $this->assertContainerHasMailPost(
             true,
-            'en_marche_mailer.toto.custom_2',
+            'en_marche_mailer.mail_post.custom_2',
             false,
             'en_marche_mailer.mail_factory.custom_2'
         );
     }
 
-    public function testProducerConfigWithDefaultCustomToto()
+    public function testProducerConfigWithDefaultCustomMailPost()
     {
         $config = [
             'producer' => [
                 'app_name' => 'test',
-                'totos' => [
+                'mail_posts' => [
                     'custom' => [
                         'cc' => [
                             ['cc_email', 'cc_name'],
                         ],
                     ]
                 ],
-                'default_toto' => 'custom',
+                'default_mail_post' => 'custom',
             ],
             'amqp_connexion' => [
                 'url' => 'amqp_dsn',
@@ -288,7 +288,7 @@ class EnMarcheMailerExtensionTest extends TestCase
         $this->assertCount(
             8 + 2,
             $this->container->getDefinitions(),
-            '2 definitions more than previous test for the configured toto and its mail factory.'
+            '2 definitions more than previous test for the configured mail post and its mail factory.'
         );
 
         $this->assertContainerHasMailFactory(
@@ -308,33 +308,33 @@ class EnMarcheMailerExtensionTest extends TestCase
         $this->assertSame(
             $this->container->getDefinition('en_marche_mailer.mail_factory.custom'),
             $this->container->findDefinition(MailFactoryInterface::class),
-            \sprintf('"%s" should alias the custom toto mail factory.', MailFactoryInterface::class)
+            \sprintf('"%s" should alias the custom mail post factory.', MailFactoryInterface::class)
         );
-        $this->assertContainerHasToto(
+        $this->assertContainerHasMailPost(
             true,
-            'en_marche_mailer.toto.default',
+            'en_marche_mailer.mail_post.default',
             false
         );
-        $this->assertContainerHasToto(
+        $this->assertContainerHasMailPost(
             true,
-            'en_marche_mailer.toto.custom',
+            'en_marche_mailer.mail_post.custom',
             true,
             'en_marche_mailer.mail_factory.custom'
         );
         $this->assertSame(
-            $this->container->getDefinition('en_marche_mailer.toto.custom'),
-            $this->container->findDefinition(TotoInterface::class),
-            \sprintf('"%s" should alias the custom toto service.', TotoInterface::class)
+            $this->container->getDefinition('en_marche_mailer.mail_post.custom'),
+            $this->container->findDefinition(MailPostInterface::class),
+            \sprintf('"%s" should alias the custom mail post service.', MailPostInterface::class)
         );
     }
 
-    public function testProducerConfigWithCustomTotoAndDebug()
+    public function testProducerConfigWithCustomMailPostAndDebug()
     {
         $this->container->setParameter('kernel.environment', 'test');
         $config = [
             'producer' => [
                 'app_name' => 'test',
-                'totos' => [
+                'mail_posts' => [
                     'custom' => [
                         'cc' => [
                             ['cc_email'],
@@ -378,17 +378,17 @@ class EnMarcheMailerExtensionTest extends TestCase
             ],
             []
         );
-        $this->assertContainerHasToto(
+        $this->assertContainerHasMailPost(
             true,
-            'en_marche_mailer.toto.default',
+            'en_marche_mailer.mail_post.default',
             true,
             MailFactoryInterface::class,
             MailerInterface::class,
             true
         );
-        $this->assertContainerHasToto(
+        $this->assertContainerHasMailPost(
             true,
-            'en_marche_mailer.toto.custom',
+            'en_marche_mailer.mail_post.custom',
             false,
             'en_marche_mailer.mail_factory.custom',
             MailerInterface::class,
@@ -396,11 +396,11 @@ class EnMarcheMailerExtensionTest extends TestCase
         );
         $this->assertSame(
             'default',
-            $this->container->getDefinition('en_marche_mailer.toto.default')->getArgument(2)
+            $this->container->getDefinition('en_marche_mailer.mail_post.default')->getArgument(2)
         );
         $this->assertSame(
             'custom',
-            $this->container->getDefinition('en_marche_mailer.toto.custom')->getArgument(2)
+            $this->container->getDefinition('en_marche_mailer.mail_post.custom')->getArgument(2)
         );
     }
 
@@ -497,7 +497,7 @@ class EnMarcheMailerExtensionTest extends TestCase
         }
     }
 
-    private function assertContainerHasToto(
+    private function assertContainerHasMailPost(
         bool $has,
         string $id,
         bool $isDefault = true,
@@ -509,18 +509,18 @@ class EnMarcheMailerExtensionTest extends TestCase
         $this->assertContainerHasDefinition($has, $id, !$debug);
 
         if ($has) {
-            $toto = $this->container->findDefinition($id);
+            $mailPost = $this->container->findDefinition($id);
 
             if ($isDefault) {
-                $this->assertSame($this->container->findDefinition(TotoInterface::class), $toto);
+                $this->assertSame($this->container->findDefinition(MailPostInterface::class), $mailPost);
             } else {
-                $this->assertNotSame($this->container->findDefinition(TotoInterface::class), $toto);
+                $this->assertNotSame($this->container->findDefinition(MailPostInterface::class), $mailPost);
             }
-            $this->assertSame($debug ? DebugToto::class : Toto::class, $toto->getClass());
-            $this->assertCount($debug ? 3 : 2, $toto->getArguments());
+            $this->assertSame($debug ? DebugMailPost::class : MailPost::class, $mailPost->getClass());
+            $this->assertCount($debug ? 3 : 2, $mailPost->getArguments());
 
-            $this->assertReference($mailerId, $toto->getArgument(0));
-            $this->assertReference($mailFactoryId, $toto->getArgument(1));
+            $this->assertReference($mailerId, $mailPost->getArgument(0));
+            $this->assertReference($mailFactoryId, $mailPost->getArgument(1));
         }
     }
 }
