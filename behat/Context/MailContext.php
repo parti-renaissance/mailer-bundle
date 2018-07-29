@@ -75,7 +75,7 @@ class MailContext extends RawMinkContext
             throw new \RuntimeException(sprintf(
                 'There is no variable or no data called %s. Variables availables are %s.',
                 $emailVariableName,
-                implode(', ', array_keys($this->currentEmailPayload['Recipients'][0]['Vars'] ?? []))
+                implode(', ', array_keys($recipients[0]->getTemplateVars()))
             ));
         }
 
