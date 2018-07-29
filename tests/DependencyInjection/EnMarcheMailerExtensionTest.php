@@ -4,7 +4,6 @@ namespace EnMarche\MailerBundle\Tests\DependencyInjection;
 
 use EnMarche\MailerBundle\DependencyInjection\EnMarcheMailerExtension;
 use EnMarche\MailerBundle\Mail\Mail;
-use EnMarche\MailerBundle\Mail\MailFactory;
 use EnMarche\MailerBundle\Mail\MailFactoryInterface;
 use EnMarche\MailerBundle\Mailer\Mailer;
 use EnMarche\MailerBundle\Mailer\MailerInterface;

@@ -8,10 +8,10 @@ class MailBuilder extends Mail implements MailBuilderInterface
 {
     private $mailClass;
     private $toRecipients;
-    private $ccRecipients;
-    private $bccRecipients;
+    private $ccRecipients = [];
+    private $bccRecipients = [];
     private $replyTo;
-    private $templateVars;
+    private $templateVars = [];
 
     /**
      * {@inheritdoc}
@@ -172,6 +172,7 @@ class MailBuilder extends Mail implements MailBuilderInterface
     public function getMail(): MailInterface
     {
         return new $this->mailClass(
+            $this->getApp(),
             $this->resetToRecipients(),
             $this->replyTo,
             $this->ccRecipients,

@@ -116,9 +116,26 @@ class Mail implements MailInterface
 
         $parts = \explode('\\', static::class);
 
-        return $this->templateName = \preg_replace_callback('/(^|[a-z])([A-Z])/', function (array $matches) {
-            return \strtolower(0 === \strlen($matches[1] ? $matches[2] : "{$matches[1]}_{$matches[2]}"));
-        }, \preg_replace('/Mail$/', '', \end($parts)));
+        return $this->templateName = \preg_replace_callback(
+            '/(^|[a-z])([A-Z]+)([a-z])?/',
+            function (array $matches) {
+                if (\strlen($matches[2]) > 1 && isset($matches[3]) && \strlen($matches[3]) > 0) {
+                    // we need to keep the last cap for the following part, i.e: xxxHTMLFormXxx => xxx_html_form_xxx
+                    $lowerCaps = \substr($matches[2], 0, -1);
+
+                    return \strtolower(\sprintf(
+                        '%s_%s',
+                        0 === \strlen($matches[1]) ? $lowerCaps : "{$matches[1]}_$lowerCaps",
+                        \substr($matches[2], -1).$matches[3]
+                    ));
+                }
+
+                return \strtolower(
+                    (0 === \strlen($matches[1]) ? $matches[2] : "{$matches[1]}_{$matches[2]}").($matches[3] ?? '')
+                );
+            },
+            \preg_replace('/Mail$/', '', \end($parts))
+        );
     }
 
     /**
