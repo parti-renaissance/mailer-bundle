@@ -43,7 +43,7 @@ class MailContext extends RawMinkContext
                 throw new \RuntimeException(\sprintf('Expected recipient "%s", but got "%s".', $recipient, $email));
             }
             if ($vars !== $actual = \array_merge($mail->getTemplateVars(), $recipients[0]->getTemplateVars())) {
-                throw new \RuntimeException(\sprintf('Failed expecting vars, got "%s".', \serialize($actual)));
+                throw new \RuntimeException(\sprintf('Failed expecting vars, got "%s".', \var_export($actual, true)));
             }
         }
     }
@@ -73,7 +73,7 @@ class MailContext extends RawMinkContext
             throw new \RuntimeException(sprintf(
                 'There is no variable or no data called %s. Variables availables are %s.',
                 $templateVars,
-                implode(', ', array_keys($recipients[0]->getTemplateVars()))
+                \implode(', ', \array_keys($recipients[0]->getTemplateVars()))
             ));
         }
 
@@ -85,7 +85,7 @@ class MailContext extends RawMinkContext
         $mailPost = $this->getContainer()->get($name ? "en_marche_mailer.mailPost.$name" : MailPostInterface::class);
 
         if (!$mailPost instanceof DebugMailPost) {
-            throw new \LogicException(\sprintf('Expected an instance of "%s", but got "%s". Are you running in test environment?', DebugMailPost::class, get_class($mailPost)));
+            throw new \LogicException(\sprintf('Expected an instance of "%s", but got "%s". Are you running in test environment?', DebugMailPost::class, \get_class($mailPost)));
         }
 
         return $mailPost;
