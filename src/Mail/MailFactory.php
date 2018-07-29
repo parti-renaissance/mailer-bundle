@@ -2,8 +2,6 @@
 
 namespace EnMarche\MailerBundle\Mail;
 
-use EnMarche\MailerBundle\Exception\InvalidMailException;
-
 class MailFactory implements MailFactoryInterface
 {
     private $app;
@@ -43,10 +41,6 @@ class MailFactory implements MailFactoryInterface
         array $templateVars = []
     ): MailInterface
     {
-        if (!$to) {
-            throw new InvalidMailException('Mail must have at least one recipient.');
-        }
-
         $builder = MailBuilder::create($mailClass, $this->app)
             ->setToRecipients($to)
         ;

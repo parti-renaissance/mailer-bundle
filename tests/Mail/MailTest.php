@@ -96,6 +96,10 @@ class MailTest extends TestCase
 
     private function getMail(string $mailClass, array $to = []): MailInterface
     {
+        if (!$to) {
+            $to = $this->getRecipients(1);
+        }
+
         $mail = MailBuilder::create($mailClass, 'test')
             ->setToRecipients($to)
             ->getMail()

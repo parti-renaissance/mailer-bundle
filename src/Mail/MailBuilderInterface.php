@@ -3,6 +3,7 @@
 namespace EnMarche\MailerBundle\Mail;
 
 use EnMarche\MailerBundle\Exception\InvalidMailClassException;
+use EnMarche\MailerBundle\Exception\InvalidMailException;
 
 interface MailBuilderInterface extends MailInterface
 {
@@ -52,6 +53,8 @@ interface MailBuilderInterface extends MailInterface
     /**
      * This method should clear "to" recipients to prevent
      * duplicates and ease sending chunks
+     *
+     * @throws InvalidMailException
      */
     public function getMail(): MailInterface;
 

@@ -3,6 +3,7 @@
 namespace EnMarche\MailerBundle\Mail;
 
 use EnMarche\MailerBundle\Exception\InvalidMailClassException;
+use EnMarche\MailerBundle\Exception\InvalidMailException;
 
 class MailBuilder extends Mail implements MailBuilderInterface
 {
@@ -171,6 +172,10 @@ class MailBuilder extends Mail implements MailBuilderInterface
      */
     public function getMail(): MailInterface
     {
+        if (!$this->toRecipients) {
+            throw new InvalidMailException('Mail must have at least one recipient.');
+        }
+
         return new $this->mailClass(
             $this->getApp(),
             $this->resetToRecipients(),
