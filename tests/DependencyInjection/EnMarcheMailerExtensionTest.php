@@ -12,6 +12,7 @@ use EnMarche\MailerBundle\Mailer\Transporter\AmqpMailTransporter;
 use EnMarche\MailerBundle\Tests\Test\DebugMailPost;
 use EnMarche\MailerBundle\MailPost\MailPost;
 use EnMarche\MailerBundle\MailPost\MailPostInterface;
+use OldSound\RabbitMqBundle\DependencyInjection\OldSoundRabbitMqExtension;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -91,8 +92,28 @@ class EnMarcheMailerExtensionTest extends TestCase
         $this->assertSame($transporter, $this->container->findDefinition(TransporterInterface::class));
     }
 
+    /**
+     * @expectedException \LogicException
+     * @expectedExceptionMessage Extension "old_sound_rabbit_mq" is needed.
+     */
+    public function testProducerConfigNeedsOldSoundExtension()
+    {
+        $config = [
+            'producer' => [
+                'app_name' => 'test',
+            ],
+            'amqp_connexion' => [
+                'url' => 'amqp_dsn',
+            ],
+        ];
+
+        $this->extension->load([$config], $this->container);
+    }
+
     public function testProducerConfig()
     {
+        $this->container->registerExtension(new OldSoundRabbitMqExtension());
+
         $config = [
             'producer' => [
                 'app_name' => 'test',
@@ -169,6 +190,8 @@ class EnMarcheMailerExtensionTest extends TestCase
 
     public function testProducerConfigWithCustomMailPosts()
     {
+        $this->container->registerExtension(new OldSoundRabbitMqExtension());
+
         $config = [
             'producer' => [
                 'app_name' => 'test',
@@ -261,6 +284,8 @@ class EnMarcheMailerExtensionTest extends TestCase
 
     public function testProducerConfigWithDefaultCustomMailPost()
     {
+        $this->container->registerExtension(new OldSoundRabbitMqExtension());
+
         $config = [
             'producer' => [
                 'app_name' => 'test',

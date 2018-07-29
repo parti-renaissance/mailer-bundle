@@ -117,6 +117,8 @@ class EnMarcheMailerExtension extends ConfigurableExtension implements PrependEx
             return;
         }
 
+        $this->checkContainerHasExtension($container, 'old_sound_rabbit_mq');
+
         $connectionSuffix = isset($this->amqpConnexionConfig['use_socket']) ? 'socket_connection.class' : 'connection.class';
         $classParam =
             isset($this->amqpConnexionConfig['connexion']['lazy'])
@@ -141,6 +143,7 @@ class EnMarcheMailerExtension extends ConfigurableExtension implements PrependEx
      */
     private function addAMQPProducer(ContainerBuilder $container, string $name): void
     {
+
         $container->register(self::PRODUCER_IDS[$name], '%old_sound_rabbit_mq.producer.class%')
             ->addArgument(new Reference(self::AMQP_CONNEXION_ID))
             ->addMethodCall('setExchangeOptions', [[
@@ -202,11 +205,13 @@ class EnMarcheMailerExtension extends ConfigurableExtension implements PrependEx
         }
     }
 
-    private function configureDatabaseConnexion()
+    private function configureDatabaseConnexion(ContainerBuilder $container)
     {
         if ($this->databaseConnexionSet) {
             return;
         }
+
+        $this->checkContainerHasExtension($container, 'doctrine');
 
         // todo
 
@@ -219,5 +224,12 @@ class EnMarcheMailerExtension extends ConfigurableExtension implements PrependEx
             'monolog.logger.en_marche_mailer',
             ContainerInterface::NULL_ON_INVALID_REFERENCE
         ));
+    }
+
+    private function checkContainerHasExtension(ContainerBuilder $container, string $extension): void
+    {
+        if (!$container->hasExtension($extension)) {
+            throw new \LogicException(\sprintf('Extension "%s" is needed.', $extension));
+        }
     }
 }
