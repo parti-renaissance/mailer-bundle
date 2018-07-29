@@ -128,9 +128,9 @@ class DummyMailRequest implements MailRequestInterface
     /**
      * {@inheritdoc}
      */
-    public function setRequestPayload(array $payload): void
+    public function prepare(array $requestPayload): void
     {
-        $this->requestPayload = $payload;
+        $this->requestPayload = $requestPayload;
     }
 
     /**
@@ -144,8 +144,8 @@ class DummyMailRequest implements MailRequestInterface
     /**
      * {@inheritdoc}
      */
-    public function setResponsePayload(array $payload): void
+    public function deliver(array $responsePayload): void
     {
-        $this->responsePayload = $payload;
+        $this->responsePayload = $responsePayload;
     }
 }

@@ -195,7 +195,7 @@ class MailRequest implements MailRequestInterface
     /**
      * {@inheritdoc}
      */
-    public function setRequestPayload(array $requestPayload): void
+    public function prepare(array $requestPayload): void
     {
         $this->requestPayload = $requestPayload;
     }
@@ -211,8 +211,9 @@ class MailRequest implements MailRequestInterface
     /**
      * {@inheritdoc}
      */
-    public function setResponsePayload(array $responsePayload): void
+    public function deliver(array $responsePayload): void
     {
+        $this->requestPayload = null;
         $this->responsePayload = $responsePayload;
     }
 

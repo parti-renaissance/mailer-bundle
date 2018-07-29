@@ -167,7 +167,7 @@ class MailRequestConsumerTest extends TestCase
     {
         $msg = 1;
         $mailRequest = new DummyMailRequest();
-        $mailRequest->setResponsePayload(['sent']);
+        $mailRequest->deliver(['sent']);
 
         $this->mailRequestRepository->expects($this->once())
             ->method('find')

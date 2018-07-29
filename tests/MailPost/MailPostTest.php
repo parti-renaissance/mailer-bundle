@@ -4,6 +4,7 @@ namespace EnMarche\MailerBundle\Tests\Toto;
 
 use EnMarche\MailerBundle\Mail\MailFactoryInterface;
 use EnMarche\MailerBundle\Mail\Recipient;
+use EnMarche\MailerBundle\Mail\RecipientInterface;
 use EnMarche\MailerBundle\Mailer\MailerInterface;
 use EnMarche\MailerBundle\Tests\Mail\TotoMail;
 use EnMarche\MailerBundle\Tests\Test\DummyMail;
@@ -42,11 +43,32 @@ class MailPostTest extends TestCase
         $this->mailPost = null;
     }
 
-    public function testAddress()
+    public function testAddressOneRecipient()
     {
         $mail = new DummyMail();
         $mailClass = TotoMail::class;
-        $to = [];
+        $to = $this->createMock(RecipientInterface::class);
+        $replyTo = new Recipient('');
+        $templateVars = ['var' => 'test'];
+
+        $this->mailFactory->expects($this->once())
+            ->method('createForClass')
+            ->with($mailClass, [$to], $replyTo, $templateVars)
+            ->willReturn($mail)
+        ;
+        $this->mailer->expects($this->once())
+            ->method('send')
+            ->with($mail)
+        ;
+
+        $this->mailPost->address($mailClass, $to, $replyTo, $templateVars);
+    }
+
+    public function testAddressManyRecipients()
+    {
+        $mail = new DummyMail();
+        $mailClass = TotoMail::class;
+        $to = [$this->createMock(RecipientInterface::class)];
         $replyTo = new Recipient('');
         $templateVars = ['var' => 'test'];
 

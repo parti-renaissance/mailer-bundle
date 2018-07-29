@@ -49,9 +49,9 @@ interface MailRequestInterface
 
     public function getRequestPayload(): ?array;
 
-    public function setRequestPayload(array $payload): void;
+    public function prepare(array $requestPayload): void;
 
     public function getResponsePayload(): ?array;
 
-    public function setResponsePayload(array $payload): void;
+    public function deliver(array $responsePayload): void;
 }

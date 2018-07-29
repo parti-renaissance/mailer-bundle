@@ -28,7 +28,7 @@ class MailClient implements MailClientInterface
         if (!$requestPayload) {
             $requestPayload = $this->payloadFactory->createRequestPayload($mailRequest);
 
-            $mailRequest->setRequestPayload($requestPayload);
+            $mailRequest->prepare($requestPayload);
         }
 
         $response = $this->client->request(Request::METHOD_POST, '' , [
@@ -39,6 +39,6 @@ class MailClient implements MailClientInterface
             throw new InvalidMailResponseException($mailRequest, $response);
         }
 
-        $mailRequest->setResponsePayload($this->payloadFactory->createResponsePayload($response));
+        $mailRequest->deliver($this->payloadFactory->createResponsePayload($response));
     }
 }

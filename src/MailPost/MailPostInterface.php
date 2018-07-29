@@ -12,6 +12,8 @@ interface MailPostInterface
 {
     /**
      * @see MailFactoryInterface
+     *
+     * @param RecipientInterface|RecipientInterface[] $to One or more recipients
      */
-    public function address(string $mailClass, array $to, RecipientInterface $replyTo = null, array $templateVars = []): void;
+    public function address(string $mailClass, $to, RecipientInterface $replyTo = null, array $templateVars = []): void;
 }
