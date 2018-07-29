@@ -12,7 +12,6 @@ use EnMarche\MailerBundle\Mailer\Transporter\AmqpMailTransporter;
 use EnMarche\MailerBundle\Tests\Test\DebugMailPost;
 use EnMarche\MailerBundle\MailPost\MailPost;
 use EnMarche\MailerBundle\MailPost\MailPostInterface;
-use OldSound\RabbitMqBundle\DependencyInjection\OldSoundRabbitMqExtension;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -37,6 +36,7 @@ class EnMarcheMailerExtensionTest extends TestCase
         $this->extension = new EnMarcheMailerExtension();
 
         $this->container->setParameter('kernel.environment', 'prod');
+        $this->container->setParameter('kernel.bundles', []);
     }
 
     protected function tearDown()
@@ -94,7 +94,7 @@ class EnMarcheMailerExtensionTest extends TestCase
 
     /**
      * @expectedException \LogicException
-     * @expectedExceptionMessage Extension "old_sound_rabbit_mq" is needed.
+     * @expectedExceptionMessage Bundle "OldSoundRabbitMqBundle" is needed.
      */
     public function testProducerConfigNeedsOldSoundExtension()
     {
@@ -112,7 +112,7 @@ class EnMarcheMailerExtensionTest extends TestCase
 
     public function testProducerConfig()
     {
-        $this->container->registerExtension(new OldSoundRabbitMqExtension());
+        $this->registerBundles('OldSoundRabbitMqBundle');
 
         $config = [
             'producer' => [
@@ -190,7 +190,7 @@ class EnMarcheMailerExtensionTest extends TestCase
 
     public function testProducerConfigWithCustomMailPosts()
     {
-        $this->container->registerExtension(new OldSoundRabbitMqExtension());
+        $this->registerBundles('OldSoundRabbitMqBundle');
 
         $config = [
             'producer' => [
@@ -284,7 +284,7 @@ class EnMarcheMailerExtensionTest extends TestCase
 
     public function testProducerConfigWithDefaultCustomMailPost()
     {
-        $this->container->registerExtension(new OldSoundRabbitMqExtension());
+        $this->registerBundles('OldSoundRabbitMqBundle');
 
         $config = [
             'producer' => [
@@ -547,5 +547,10 @@ class EnMarcheMailerExtensionTest extends TestCase
             $this->assertReference($mailerId, $mailPost->getArgument(0));
             $this->assertReference($mailFactoryId, $mailPost->getArgument(1));
         }
+    }
+
+    private function registerBundles($bundles): void
+    {
+        $this->container->setParameter('kernel.bundles', \array_fill_keys((array) $bundles, true));
     }
 }

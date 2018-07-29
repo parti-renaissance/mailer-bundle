@@ -42,7 +42,7 @@ class EnMarcheMailerExtension extends ConfigurableExtension implements PrependEx
      */
     public function prepend(ContainerBuilder $container)
     {
-        if ($container->hasExtension('monolog')) {
+        if ($this->checkContainerHasBundle($container, 'MonologBundle', false)) {
             $container->prependExtensionConfig('monolog', [
                 'channels' => ['en_marche_mailer'],
             ]);
@@ -117,7 +117,7 @@ class EnMarcheMailerExtension extends ConfigurableExtension implements PrependEx
             return;
         }
 
-        $this->checkContainerHasExtension($container, 'old_sound_rabbit_mq');
+        $this->checkContainerHasBundle($container, 'OldSoundRabbitMqBundle');
 
         $connectionSuffix = isset($this->amqpConnexionConfig['use_socket']) ? 'socket_connection.class' : 'connection.class';
         $classParam =
@@ -211,7 +211,7 @@ class EnMarcheMailerExtension extends ConfigurableExtension implements PrependEx
             return;
         }
 
-        $this->checkContainerHasExtension($container, 'doctrine');
+        $this->checkContainerHasBundle($container, 'DoctrineBundle');
 
         // todo
 
@@ -226,10 +226,16 @@ class EnMarcheMailerExtension extends ConfigurableExtension implements PrependEx
         ));
     }
 
-    private function checkContainerHasExtension(ContainerBuilder $container, string $extension): void
+    private function checkContainerHasBundle(ContainerBuilder $container, string $bundle, bool $throw = true): bool
     {
-        if (!$container->hasExtension($extension)) {
-            throw new \LogicException(\sprintf('Extension "%s" is needed.', $extension));
+        if (!\array_key_exists($bundle, $container->getParameter('kernel.bundles'))) {
+            if ($throw) {
+                throw new \LogicException(\sprintf('Bundle "%s" is needed.', $bundle));
+            }
+
+            return false;
         }
+
+        return true;
     }
 }
