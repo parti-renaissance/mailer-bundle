@@ -3,8 +3,15 @@
 namespace EnMarche\MailerBundle\DependencyInjection;
 
 use EnMarche\MailerBundle\Exception\InvalidTransporterTypeException;
+use EnMarche\MailerBundle\Mail\MailFactory;
+use EnMarche\MailerBundle\Mail\MailFactoryInterface;
+use EnMarche\MailerBundle\Mailer\MailerInterface;
 use EnMarche\MailerBundle\Mailer\Transporter\TransporterType;
+use EnMarche\MailerBundle\Tests\Test\DebugToto;
+use EnMarche\MailerBundle\Toto\Toto;
+use EnMarche\MailerBundle\Toto\TotoInterface;
 use Symfony\Component\Config\FileLocator;
+use Symfony\Component\DependencyInjection\Alias;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\DependencyInjection\Definition;
@@ -24,6 +31,7 @@ class EnMarcheMailerExtension extends ConfigurableExtension implements PrependEx
         'mail_request' => self::MAIL_REQUEST_PRODUCER_ID,
     ];
 
+    private $debug;
     private $amqpConnexionConfig;
     private $amqpConnexionSet = false;
     private $databaseConnexionConfig;
@@ -47,6 +55,10 @@ class EnMarcheMailerExtension extends ConfigurableExtension implements PrependEx
     protected function loadInternal(array $config, ContainerBuilder $container)
     {
         $loader = new XmlFileLoader($container, new FileLocator(__DIR__.'/../Resources/config'));
+
+        if ($this->debug = 'test' === $container->getParameter('kernel.environment')) {
+            $loader->load('mailer_test.xml');
+        }
 
         $this->amqpConnexionConfig = [
             'connexion' => $config['amqp_connexion'],
@@ -81,9 +93,9 @@ class EnMarcheMailerExtension extends ConfigurableExtension implements PrependEx
                 $this->addAMQPProducer($container, 'mail');
 
                 $transporter = $container->getDefinition($transporterId)
-                    ->setArgument('$producer', new Reference(self::PRODUCER_IDS['mail']))
-                    ->setArgument('$chunkSize', $config['transport']['chunk_size'])
-                    ->setArgument('$routingKey', $this->amqpConnexionConfig['mail_routing_key'])
+                    ->setArgument(0, new Reference(self::PRODUCER_IDS['mail']))
+                    ->setArgument(1, $config['transport']['chunk_size'])
+                    ->setArgument(2, $this->amqpConnexionConfig['mail_routing_key'])
                 ;
                 $this->injectLogger($transporter);
 
@@ -92,6 +104,8 @@ class EnMarcheMailerExtension extends ConfigurableExtension implements PrependEx
             default:
                 $container->setAlias('en_marche_mailer.mailer.transporter.default', $transporterId);
         }
+
+        $this->configureToto($container, $config['app_name'], $config['totos'], $config['default_toto']);
     }
 
     /**
@@ -122,6 +136,9 @@ class EnMarcheMailerExtension extends ConfigurableExtension implements PrependEx
         $this->amqpConnexionSet = true;
     }
 
+    /**
+     * @see \OldSound\RabbitMqBundle\DependencyInjection\OldSoundRabbitMqExtension::loadProducers()
+     */
     private function addAMQPProducer(ContainerBuilder $container, string $name): void
     {
         $container->register(self::PRODUCER_IDS[$name], '%old_sound_rabbit_mq.producer.class%')
@@ -136,6 +153,48 @@ class EnMarcheMailerExtension extends ConfigurableExtension implements PrependEx
             ->addTag('old_sound_rabbit_mq.base_amqp')
             ->addTag('old_sound_rabbit_mq.producer')
         ;
+    }
+
+    private function configureToto(ContainerBuilder $container, string $appName, array $totos, string $defaultTotoName): void
+    {
+        $defaultToto = $container->findDefinition(TotoInterface::class);
+        $defaultMailFactory = $container->findDefinition(MailFactoryInterface::class);
+
+        // ensure a default key is set
+        foreach (\array_merge(['default' => []], $totos) as $totoName => $totoConfig) {
+            $isDefault = 'default' === $totoName;
+            $mailFactory = $isDefault ? $defaultMailFactory : new Definition(MailFactory::class);
+            $mailFactory
+                ->addArgument($appName)
+                ->addArgument($totoConfig['cc'] ?? [])
+                ->addArgument($totoConfig['bcc'] ?? [])
+            ;
+
+            $toto = $isDefault ? $defaultToto : new Definition($this->debug ? DebugToto::class : Toto::class);
+
+            if (!$isDefault) {
+                $mailFactoryId = "en_marche_mailer.mail_factory.$totoName";
+
+                $container->setDefinition($mailFactoryId, $mailFactory)
+                    ->setPublic(false)
+                ;
+                $toto = $container->setDefinition("en_marche_mailer.toto.$totoName", $toto)
+                    ->addArgument(new Reference(MailerInterface::class))
+                    ->addArgument(new Reference($mailFactoryId))
+                    ->setPublic(false)
+                ;
+            }
+            if ($this->debug) {
+                $toto->addArgument($totoName)
+                    ->setPublic(true)
+                ;
+            }
+        }
+
+        if ('default' !== $defaultTotoName) {
+            $container->setAlias(TotoInterface::class, new Alias('en_marche_mailer.toto.'.$defaultTotoName, $this->debug));
+            $container->setAlias(MailFactoryInterface::class, new Alias('en_marche_mailer.mail_factory.'.$defaultTotoName, $this->debug));
+        }
     }
 
     private function configureDatabaseConnexion()

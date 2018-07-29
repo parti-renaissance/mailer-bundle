@@ -52,20 +52,6 @@ class ConfigurationTest extends TestCase
 
     /**
      * @expectedException \Symfony\Component\Config\Definition\Exception\InvalidConfigurationException
-     * @expectedExceptionMessage The value "wrong" is not allowed for path "en_marche_mailer.producer.transport.type". Permissible values: "amqp"
-     */
-    public function testProducerConfigRequiresValidTransporterType()
-    {
-        $producer = ['producer' => [
-            'app_name' => 'test',
-            'transport' => ['type' => 'wrong'],
-        ]];
-
-        $this->processor->processConfiguration($this->configuration, [$producer]);
-    }
-
-    /**
-     * @expectedException \Symfony\Component\Config\Definition\Exception\InvalidConfigurationException
      * @expectedExceptionMessage Invalid configuration for path "en_marche_mailer": Current config needs AMQP connexion to transport mails.
      */
     public function testProducerConfigRequiresAMQPConnexion()
