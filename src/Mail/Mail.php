@@ -200,4 +200,8 @@ class Mail implements MailInterface
 
         return $chunk;
     }
+
+    private function __clone()
+    {
+    }
 }

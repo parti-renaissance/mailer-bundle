@@ -30,9 +30,12 @@ class AmqpMailTransporter implements TransporterInterface
         $routingKey = $this->getRoutingKey($mail);
 
         if ($mail instanceof ChunkableMailInterface) {
-            $chunkId = $mail->getChunkId()->toString();
+            $chunkId = null;
 
             foreach ($mail->chunk($this->chunkSize) as $chunk) {
+                if (!$chunkId) {
+                    $chunkId = $mail->getChunkId()->toString();
+                }
                 $this->log($template, $routingKey, $chunk->getToRecipients(), $chunkId);
                 $this->publish($chunk, $routingKey);
             }
