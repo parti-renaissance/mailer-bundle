@@ -8,12 +8,12 @@ use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\DependencyInjection\Definition;
-use Symfony\Component\DependencyInjection\Extension\Extension;
 use Symfony\Component\DependencyInjection\Extension\PrependExtensionInterface;
 use Symfony\Component\DependencyInjection\Loader\XmlFileLoader;
 use Symfony\Component\DependencyInjection\Reference;
+use Symfony\Component\HttpKernel\DependencyInjection\ConfigurableExtension;
 
-class EnMarcheMailerExtension extends Extension implements PrependExtensionInterface
+class EnMarcheMailerExtension extends ConfigurableExtension implements PrependExtensionInterface
 {
     private const AMQP_CONNEXION_ID = 'old_sound_rabbit_mq.connexion.en_marche_mailer';
 
@@ -26,8 +26,12 @@ class EnMarcheMailerExtension extends Extension implements PrependExtensionInter
 
     private $amqpConnexionConfig;
     private $amqpConnexionSet = false;
+    private $databaseConnexionConfig;
     private $databaseConnexionSet = false;
 
+    /**
+     * {@inheritdoc}
+     */
     public function prepend(ContainerBuilder $container)
     {
         if ($container->hasExtension('monolog')) {
@@ -37,10 +41,11 @@ class EnMarcheMailerExtension extends Extension implements PrependExtensionInter
         }
     }
 
-    public function load(array $configs, ContainerBuilder $container)
+    /**
+     * {@inheritdoc}
+     */
+    protected function loadInternal(array $config, ContainerBuilder $container)
     {
-        $config = $this->processConfiguration(new Configuration(), $configs);
-
         $loader = new XmlFileLoader($container, new FileLocator(__DIR__.'/../Resources/config'));
 
         $this->amqpConnexionConfig = [
@@ -48,6 +53,7 @@ class EnMarcheMailerExtension extends Extension implements PrependExtensionInter
             'mail_routing_key' => $config['amqp_mail_route_key'],
             'mail_request_routing_key' => $config['amqp_mail_request_route_key'],
         ];
+        $this->databaseConnexionConfig = $config['mail_database_url'] ?? '';
 
         if (isset($config['producer'])) {
             $this->registerProducerConfiguration($config['producer'], $container, $loader);
@@ -69,18 +75,22 @@ class EnMarcheMailerExtension extends Extension implements PrependExtensionInter
             throw new InvalidTransporterTypeException(\sprintf('The id "%s" was not found. Is "%s" a valid type?', $transporterId, $config['transport']['type']));
         }
 
-        if (TransporterType::AMQP !== $config['transport']['type']) {
-            $container->setAlias('en_marche_mailer.mailer.transporter.default', $transporterId);
-        } else {
-            $this->configureAMQPConnexion($container);
-            $this->addAMQPProducer($container, 'mail');
+        switch ($config['transport']['type']) {
+            case TransporterType::AMQP:
+                $this->configureAMQPConnexion($container);
+                $this->addAMQPProducer($container, 'mail');
 
-            $transporter = $container->getDefinition($transporterId)
-                ->setArgument('$producer', new Reference(self::PRODUCER_IDS['mail']))
-                ->setArgument('$chunkSize', $config['transport']['chunk_size'])
-                ->setArgument('$routingKey', $this->amqpConnexionConfig['mail_routing_key'])
-            ;
-            $this->injectLogger($transporter);
+                $transporter = $container->getDefinition($transporterId)
+                    ->setArgument('$producer', new Reference(self::PRODUCER_IDS['mail']))
+                    ->setArgument('$chunkSize', $config['transport']['chunk_size'])
+                    ->setArgument('$routingKey', $this->amqpConnexionConfig['mail_routing_key'])
+                ;
+                $this->injectLogger($transporter);
+
+                break;
+
+            default:
+                $container->setAlias('en_marche_mailer.mailer.transporter.default', $transporterId);
         }
     }
 
