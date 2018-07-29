@@ -164,13 +164,13 @@ class EnMarcheMailerExtension extends ConfigurableExtension implements PrependEx
         foreach (\array_merge(['default' => []], $totos) as $totoName => $totoConfig) {
             $isDefault = 'default' === $totoName;
             $mailFactory = $isDefault ? $defaultMailFactory : new Definition(MailFactory::class);
+            $toto = $isDefault ? $defaultToto : new Definition($this->debug ? DebugToto::class : Toto::class);
+
             $mailFactory
                 ->addArgument($appName)
                 ->addArgument($totoConfig['cc'] ?? [])
                 ->addArgument($totoConfig['bcc'] ?? [])
             ;
-
-            $toto = $isDefault ? $defaultToto : new Definition($this->debug ? DebugToto::class : Toto::class);
 
             if (!$isDefault) {
                 $mailFactoryId = "en_marche_mailer.mail_factory.$totoName";
@@ -178,16 +178,21 @@ class EnMarcheMailerExtension extends ConfigurableExtension implements PrependEx
                 $container->setDefinition($mailFactoryId, $mailFactory)
                     ->setPublic(false)
                 ;
-                $toto = $container->setDefinition("en_marche_mailer.toto.$totoName", $toto)
+                $container->setDefinition("en_marche_mailer.toto.$totoName", $toto)
                     ->addArgument(new Reference(MailerInterface::class))
                     ->addArgument(new Reference($mailFactoryId))
                     ->setPublic(false)
                 ;
             }
+
             if ($this->debug) {
-                $toto->addArgument($totoName)
+                $toto
+                    ->addArgument($totoName)
                     ->setPublic(true)
                 ;
+                if ($isDefault) {
+                    $defaultToto->setClass(DebugToto::class);
+                }
             }
         }
 

@@ -5,9 +5,5 @@
     <services>
         <!-- Allow enabling "null" transport type in "config/packages/test/en_marche_mailer.yaml" -->
         <service id="en_marche_mailer.mailer.transporter.null" class="EnMarche\MailerBundle\Tests\Test\NullMailTransporter" public="false" />
-
-        <!-- Make default Toto keep mails in memory -->
-        <service id="en_marche_mailer.toto.test" class="EnMarche\MailerBundle\Tests\Test\DebugToto" public="true" />
-        <service id="EnMarche\MailerBundle\Toto\TotoInterface" alias="en_marche_mailer.toto.test" public="true" />
     </services>
 </container>
