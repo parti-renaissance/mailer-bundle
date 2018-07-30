@@ -18,8 +18,15 @@ class DummyMailRequest implements MailRequestInterface
     protected $ccRecipients = [];
     protected $bccRecipients = [];
     protected $campaign;
+    protected $createdAt;
+    protected $deliveredAt;
     protected $requestPayload;
     protected $responsePayload;
+
+    public function __construct(\DateTimeImmutable $createdAt = null)
+    {
+        $this->createdAt = $createdAt ?: new \DateTimeImmutable();
+    }
 
     /**
      * {@inheritdoc}
@@ -117,6 +124,11 @@ class DummyMailRequest implements MailRequestInterface
         return $this->campaign;
     }
 
+    public function getCreatedAt(): \DateTimeImmutable
+    {
+        return $this->createdAt;
+    }
+
     /**
      * {@inheritdoc}
      */
@@ -144,8 +156,14 @@ class DummyMailRequest implements MailRequestInterface
     /**
      * {@inheritdoc}
      */
-    public function deliver(array $responsePayload): void
+    public function deliver(array $responsePayload, \DateTimeImmutable $deliveredAt = null): void
     {
         $this->responsePayload = $responsePayload;
+        $this->deliveredAt = $deliveredAt ?: new \DateTimeImmutable();
+    }
+
+    public function getDeliveredAt(): ?\DateTimeImmutable
+    {
+        return $this->deliveredAt;
     }
 }

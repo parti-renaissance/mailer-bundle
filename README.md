@@ -92,7 +92,7 @@ However, they should not be used. Instead, you should rely on the following:
 
 The convention is to put mail classes under the `App\Mail` namespace, but you must suffix them by `Mail` and make them
 extend either `EnMarche\MailerBundle\Mail\TransactionalMail` or `EnMarche\MailerBundle\Mail\CampaignMail`:
-```yaml
+```php
 namespace App\Mail;
 
 // ... other use statements
@@ -149,7 +149,7 @@ public function action(Request $request, Adherent $adherent, MailPostInterface $
 ```
 
 Example with a campaign message:
-```yaml
+```php
 namespace App\Mail;
 
 // ... other use statements

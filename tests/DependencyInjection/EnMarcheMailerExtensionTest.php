@@ -167,7 +167,7 @@ class EnMarcheMailerExtensionTest extends TestCase
         $this->assertSame(AmqpMailTransporter::class, $transporter->getClass());
         $this->assertReference('old_sound_rabbit_mq.en_marche_mail_producer', $transporter->getArgument(0));
         $this->assertSame(Mail::DEFAULT_CHUNK_SIZE, $transporter->getArgument(1));
-        $this->assertSame('mails', $transporter->getArgument(2));
+        $this->assertSame('em_mails', $transporter->getArgument(2));
         $this->assertReference('monolog.logger.en_marche_mailer', $transporter->getArgument('$logger'), ContainerInterface::NULL_ON_INVALID_REFERENCE);
 
         $mailProducer = $this->container->getDefinition('old_sound_rabbit_mq.en_marche_mail_producer');
@@ -178,7 +178,7 @@ class EnMarcheMailerExtensionTest extends TestCase
         $this->assertCount(1, $mailProducer->getMethodCalls());
         $this->assertSame(['setExchangeOptions', [
             [
-                'name' => 'mail',
+                'name' => 'en_marche_mailer',
                 'type' => 'direct',
                 'passive' => true,
                 'declare' => false,

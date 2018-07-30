@@ -17,7 +17,13 @@ class DummyMail implements MailInterface
     protected $templateVars = [];
     protected $templateName = 'dummy';
     protected $type = 'fake';
+    protected $createdAt;
     protected $chunkId;
+
+    public function __construct(\DateTimeImmutable $createdAt = null)
+    {
+        $this->createdAt = $createdAt ?: new \DateTimeImmutable();
+    }
 
     /**
      * {@inheritdoc}
@@ -81,6 +87,14 @@ class DummyMail implements MailInterface
     public function getTemplateName(): string
     {
         return $this->templateName;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getCreatedAt(): \DateTimeImmutable
+    {
+        return $this->createdAt;
     }
 
     /**

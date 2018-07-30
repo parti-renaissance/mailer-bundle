@@ -62,8 +62,6 @@ class EnMarcheMailerExtension extends ConfigurableExtension implements PrependEx
 
         $this->amqpConnexionConfig = [
             'connexion' => $config['amqp_connexion'],
-            'mail_routing_key' => $config['amqp_mail_route_key'],
-            'mail_request_routing_key' => $config['amqp_mail_request_route_key'],
         ];
         $this->databaseConnexionConfig = $config['mail_database_url'] ?? '';
 
@@ -95,7 +93,7 @@ class EnMarcheMailerExtension extends ConfigurableExtension implements PrependEx
                 $transporter = $container->getDefinition($transporterId)
                     ->setArgument(0, new Reference(self::PRODUCER_IDS['mail']))
                     ->setArgument(1, $config['transport']['chunk_size'])
-                    ->setArgument(2, $this->amqpConnexionConfig['mail_routing_key'])
+                    ->setArgument(2, 'em_mails')
                 ;
                 $this->injectLogger($transporter);
 
@@ -119,7 +117,7 @@ class EnMarcheMailerExtension extends ConfigurableExtension implements PrependEx
 
         $this->checkContainerHasBundle($container, 'OldSoundRabbitMqBundle');
 
-        $connectionSuffix = isset($this->amqpConnexionConfig['use_socket']) ? 'socket_connection.class' : 'connection.class';
+        $connectionSuffix = isset($this->amqpConnexionConfig['connexion']['use_socket']) ? 'socket_connection.class' : 'connection.class';
         $classParam =
             isset($this->amqpConnexionConfig['connexion']['lazy'])
                 ? '%old_sound_rabbit_mq.lazy.'.$connectionSuffix.'%'
@@ -147,7 +145,7 @@ class EnMarcheMailerExtension extends ConfigurableExtension implements PrependEx
         $container->register(self::PRODUCER_IDS[$name], '%old_sound_rabbit_mq.producer.class%')
             ->addArgument(new Reference(self::AMQP_CONNEXION_ID))
             ->addMethodCall('setExchangeOptions', [[
-                'name' => $name,
+                'name' => 'en_marche_mailer',
                 'type' => 'direct',
                 'passive' => true,
                 'declare' => false,

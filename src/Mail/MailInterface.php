@@ -39,6 +39,8 @@ interface MailInterface
 
     public function getTemplateName(): string;
 
+    public function getCreatedAt(): \DateTimeImmutable;
+
     /**
      * @return string One of Mail constants
      */

@@ -47,6 +47,8 @@ interface MailRequestInterface
 
     public function getCampaign(): ?UuidInterface;
 
+    public function getCreatedAt(): \DateTimeImmutable;
+
     public function getRequestPayload(): ?array;
 
     public function prepare(array $requestPayload): void;
@@ -54,4 +56,6 @@ interface MailRequestInterface
     public function getResponsePayload(): ?array;
 
     public function deliver(array $responsePayload): void;
+
+    public function getDeliveredAt(): ?\DateTimeImmutable;
 }

@@ -20,7 +20,7 @@ class MailConsumerTest extends TestCase
 {
     use LoggerTestTrait;
 
-    private const ROUTING_KEY = 'mail_requests_test';
+    private const ROUTING_KEY = 'em_mail_requests';
 
     /**
      * @var MockObject|ProducerInterface
@@ -99,10 +99,14 @@ class MailConsumerTest extends TestCase
             ->method('getType')
             ->willReturn('fake')
         ;
+        $mailRequest->expects($this->once())
+            ->method('getApp')
+            ->willReturn('test')
+        ;
 
         $this->producer->expects($this->once())
             ->method('publish')
-            ->with($requestId, self::ROUTING_KEY.'_'.$mail->getType())
+            ->with($requestId, self::ROUTING_KEY.'_'.$mail->getType().'_'.$mail->getApp())
         ;
 
         $this->assertSame(

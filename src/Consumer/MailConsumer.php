@@ -5,6 +5,7 @@ namespace EnMarche\MailerBundle\Consumer;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
 use EnMarche\MailerBundle\Client\MailRequestFactoryInterface;
+use EnMarche\MailerBundle\Client\MailRequestInterface;
 use EnMarche\MailerBundle\Mail\MailInterface;
 use OldSound\RabbitMqBundle\RabbitMq\ConsumerInterface;
 use OldSound\RabbitMqBundle\RabbitMq\ProducerInterface;
@@ -19,21 +20,21 @@ use Psr\Log\LoggerInterface;
 class MailConsumer implements ConsumerInterface
 {
     private $producer;
-    private $routingKey;
+    private $routingKeyPrefix;
     private $entityManager;
     private $mailRequestFactory;
     private $logger;
 
     public function __construct(
         ProducerInterface $producer,
-        string $routingKey,
+        string $routingKeyPrefix,
         EntityManagerInterface $entityManager,
         MailRequestFactoryInterface $mailRequestFactory,
         LoggerInterface $logger
     )
     {
         $this->producer = $producer;
-        $this->routingKey = $routingKey;
+        $this->routingKeyPrefix = $routingKeyPrefix;
         $this->entityManager = $entityManager;
         $this->mailRequestFactory = $mailRequestFactory;
         $this->logger = $logger;
@@ -77,8 +78,13 @@ class MailConsumer implements ConsumerInterface
             return ConsumerInterface::MSG_REJECT;
         }
 
-        $this->producer->publish($request->getId(), $this->routingKey.'_'.$request->getType());
+        $this->producer->publish($request->getId(), $this->getRoutingKey($request));
 
         return ConsumerInterface::MSG_ACK;
+    }
+
+    private function getRoutingKey(MailRequestInterface $mailRequest): string
+    {
+        return \sprintf('%s_%s_%s', $this->routingKeyPrefix, $mailRequest->getType(), $mailRequest->getApp());
     }
 }

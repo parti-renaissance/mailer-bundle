@@ -71,8 +71,6 @@ class Configuration implements ConfigurationInterface
                     ->variablePrototype()->info('See connexion config of OldSoundRabbitMqBundle.')->end()
                 ->end()
                 ->scalarNode('mail_database_url')->end()
-                ->scalarNode('amqp_mail_route_key')->defaultValue('mails')->end()
-                ->scalarNode('amqp_mail_request_route_key')->defaultValue('mail_requests')->end()
             ->end()
         ;
     }

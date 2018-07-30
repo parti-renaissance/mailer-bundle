@@ -56,11 +56,11 @@ class AmqpMailTransporterTest extends TestCase
     {
         $to = ['email'];
         $mail = $this->getMail([$to]);
-        $routingKey = self::ROUTING_KEY.'_'.$mail->getType();
+        $routingKey = self::ROUTING_KEY.'_'.$mail->getType().'_'.$mail->getApp();
 
         $this->logger->expects($this->once())
             ->method('info')
-            ->with(\sprintf('Publishing mail "%s" on "%s" with %d recipients.', $mail->getTemplateName(), $routingKey, 1))
+            ->with(\sprintf('Publishing mail "%s" on "%s" with %d recipient.', $mail->getTemplateName(), $routingKey, 1))
         ;
         $this->producer->expects($this->once())
             ->method('publish')
@@ -82,7 +82,7 @@ class AmqpMailTransporterTest extends TestCase
             break; // call once to generate the id
         }
 
-        $routingKey = self::ROUTING_KEY.'_'.$mail->getType();
+        $routingKey = self::ROUTING_KEY.'_'.$mail->getType().'_'.$mail->getApp();
         $logMessage = \sprintf(
             'Publishing mail chunk "%s(%s)" on "%s" with %s recipients.',
             $mail->getTemplateName(),
@@ -95,7 +95,7 @@ class AmqpMailTransporterTest extends TestCase
             ->method('info')
             ->withConsecutive(
                 [\sprintf($logMessage, Mail::DEFAULT_CHUNK_SIZE)],
-                [\sprintf($logMessage, 1)]
+                [\sprintf(\substr($logMessage, 0, -2).'.', 1)]
             )
         ;
 

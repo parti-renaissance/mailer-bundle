@@ -90,6 +90,13 @@ class MailVars
     private $campaign;
 
     /**
+     * @var \DateTimeInterface
+     *
+     * @ORM\Column(type="datetime_immutable")
+     */
+    private $createdAt;
+
+    /**
      * @param string[]     $templateVars
      * @param Address[]    $ccRecipients
      * @param Address[]    $bccRecipients
@@ -102,7 +109,8 @@ class MailVars
         array $templateVars = [],
         array $ccRecipients = [],
         array $bccRecipients = [],
-        UuidInterface $campaign = null
+        UuidInterface $campaign = null,
+        \DateTimeImmutable $createdAt = null
     )
     {
         $this->app = $app;
@@ -133,6 +141,7 @@ class MailVars
             $this->bccRecipients->add($bccRecipient);
         }
         $this->campaign = $campaign;
+        $this->createdAt = $createdAt ?: new \DateTimeImmutable();
     }
 
     public function getId(): ?int
@@ -187,5 +196,10 @@ class MailVars
     public function getCampaign(): ?UuidInterface
     {
         return $this->campaign;
+    }
+
+    public function getCreatedAt(): \DateTimeImmutable
+    {
+        return $this->createdAt;
     }
 }

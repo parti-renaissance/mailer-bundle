@@ -13,14 +13,14 @@ class AmqpMailTransporter implements TransporterInterface
 {
     private $producer;
     private $chunkSize;
-    private $routingKey;
+    private $routingKeyPrefix;
     private $logger;
 
-    public function __construct(ProducerInterface $producer, int $chunkSize = Mail::DEFAULT_CHUNK_SIZE, string $routingKey = 'mailer.scheduled_mail', LoggerInterface $logger = null)
+    public function __construct(ProducerInterface $producer, int $chunkSize = Mail::DEFAULT_CHUNK_SIZE, string $routingKeyPrefix = 'em_mails', LoggerInterface $logger = null)
     {
         $this->producer = $producer;
         $this->chunkSize = $chunkSize;
-        $this->routingKey = $routingKey;
+        $this->routingKeyPrefix = $routingKeyPrefix;
         $this->logger = $logger;
     }
 
@@ -52,7 +52,7 @@ class AmqpMailTransporter implements TransporterInterface
 
     private function getRoutingKey(MailInterface $mail): string
     {
-        return $this->routingKey.'_'.$mail->getType();
+        return $this->routingKeyPrefix.'_'.$mail->getType().'_'.$mail->getApp();
     }
 
     private function log(string $template, string $routingKey, array $to, string $chunkId = null): void

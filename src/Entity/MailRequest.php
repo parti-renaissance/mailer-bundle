@@ -66,6 +66,13 @@ class MailRequest implements MailRequestInterface
     private $responsePayload;
 
     /**
+     * @var \DateTimeImmutable|null
+     *
+     * @ORM\Column(type="datetime_immutable", nullable=true)
+     */
+    private $deliveredAt;
+
+    /**
      * @param RecipientVars[] $recipientVars
      */
     public function __construct(MailVars $vars, array $recipientVars)
@@ -184,6 +191,11 @@ class MailRequest implements MailRequestInterface
         return $this->vars->getTemplateVars();
     }
 
+    public function getCreatedAt(): \DateTimeImmutable
+    {
+        return $this->vars->getCreatedAt();
+    }
+
     /**
      * {@inheritdoc}
      */
@@ -215,6 +227,12 @@ class MailRequest implements MailRequestInterface
     {
         $this->requestPayload = null;
         $this->responsePayload = $responsePayload;
+        $this->deliveredAt = new \DateTimeImmutable();
+    }
+
+    public function getDeliveredAt(): ?\DateTimeImmutable
+    {
+        return $this->deliveredAt;
     }
 
     public function getVars(): MailVars

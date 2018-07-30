@@ -25,6 +25,7 @@ class Mail implements MailInterface
     private $replyTo;
     private $templateVars;
     private $templateName;
+    private $createdAt;
     private $chunkId;
 
     /**
@@ -48,6 +49,7 @@ class Mail implements MailInterface
         $this->ccRecipients = $ccRecipients;
         $this->bccRecipients = $bccRecipients;
         $this->templateVars = MailUtils::validateTemplateVars($templateVars);
+        $this->createdAt = new \DateTimeImmutable();
     }
 
     public function getApp(): string
@@ -141,6 +143,14 @@ class Mail implements MailInterface
     /**
      * {@inheritdoc}
      */
+    public function getCreatedAt(): \DateTimeImmutable
+    {
+        return $this->createdAt;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     final public function getType(): string
     {
         return $this->type;
@@ -181,6 +191,7 @@ class Mail implements MailInterface
         // ensure the template key is resolved
         $mail->templateName = $this->templateName ?: $this->getTemplateName();
         $mail->chunkId = $this->chunkId;
+        $mail->createdAt = $this->createdAt;
 
         return \serialize($mail);
     }

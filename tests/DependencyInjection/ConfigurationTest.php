@@ -151,8 +151,6 @@ class ConfigurationTest extends TestCase
     {
         return [
             'amqp_connexion' => [],
-            'amqp_mail_route_key' => 'mails',
-            'amqp_mail_request_route_key' => 'mail_requests',
         ];
     }
 
@@ -168,8 +166,6 @@ class ConfigurationTest extends TestCase
                 'default_mail_post' => 'default',
                 'mail_posts' => [], // should have been added empty
             ],
-            'amqp_mail_route_key' => 'mails',
-            'amqp_mail_request_route_key' => 'mail_requests',
         ];
     }
 }
