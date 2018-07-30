@@ -76,7 +76,7 @@ With the above, many services are created:
    Can be autowired thanks to the `EnMarche\MailerBundle\Mailer\MailerInterface`
  * `en_marche_mailer.mail_factory.default`, defaults to `EnMarche\MailerBundle\Factory\MailFactory`.
    Can be autowired thanks to the `EnMarche\MailerBundle\Factory\MailFactoryInterface`
- * `en_marche_mailer.mail_factory.turlututu`, another factory instance, configured with cc and bcc, it will be used by
+ * `en_marche_mailer.mail_factory.admin`, another factory instance, configured with cc and bcc, it will be used by
    the sender (see below).
 
 However, they should not be used. Instead, you should rely on the following:
