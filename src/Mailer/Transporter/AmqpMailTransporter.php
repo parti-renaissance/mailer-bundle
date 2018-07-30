@@ -62,18 +62,20 @@ class AmqpMailTransporter implements TransporterInterface
         }
         if ($chunkId) {
             $this->logger->info(\sprintf(
-                'Publishing mail chunk "%s(%s)" on "%s" with %d recipients.',
+                'Publishing mail chunk "%s(%s)" on "%s" with %d recipient%s.',
                 $template,
                 $chunkId,
                 $routingKey,
-                \count($to)
+                $toCount = \count($to),
+                $toCount > 1 ? 's' : ''
             ));
         } else {
             $this->logger->info(\sprintf(
-                'Publishing mail "%s" on "%s" with %d recipients.',
+                'Publishing mail "%s" on "%s" with %d recipient%s.',
                 $template,
                 $routingKey,
-                \count($to)
+                $toCount = \count($to),
+                $toCount > 1 ? 's' : ''
             ));
         }
     }

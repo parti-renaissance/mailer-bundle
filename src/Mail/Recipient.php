@@ -10,14 +10,9 @@ class Recipient implements RecipientInterface
 
     public function __construct(string $email, string $name = null, array $templateVars = [])
     {
-        $this->name = $name;
         $this->email = $email;
-
-        foreach ($templateVars as $varName => $varValue) {
-            if ('' !== (string) $varName && '' !== (string) $varValue) {
-                $this->templateVars[$varName] = $varValue;
-            }
-        }
+        $this->name = $name ? MailUtils::escapeHtml($name) : null;
+        $this->templateVars = MailUtils::validateTemplateVars($templateVars);
     }
 
     /**

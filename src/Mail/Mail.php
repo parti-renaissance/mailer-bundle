@@ -47,7 +47,7 @@ class Mail implements MailInterface
         $this->replyTo = $replyTo;
         $this->ccRecipients = $ccRecipients;
         $this->bccRecipients = $bccRecipients;
-        $this->templateVars = $templateVars;
+        $this->templateVars = MailUtils::validateTemplateVars($templateVars);
     }
 
     public function getApp(): string
