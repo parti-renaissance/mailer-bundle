@@ -33,8 +33,12 @@ class DebugMailPost implements MailPostInterface
     /**
      * {@inheritdoc}
      */
-    public function address(string $mailClass, array $to, RecipientInterface $replyTo = null, array $templateVars = []): void
+    public function address(string $mailClass, $to, RecipientInterface $replyTo = null, array $templateVars = []): void
     {
+        if ($to instanceof RecipientInterface) {
+            $to = [$to];
+        }
+
         $mail = $this->mailFactory->createForClass($mailClass, $to, $replyTo, $templateVars);
 
         $this->lastSentMail = $this->mails[$mailClass][] = $mail;
