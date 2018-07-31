@@ -13,7 +13,7 @@ use Ramsey\Uuid\UuidInterface;
  * @ORM\Table(
  *     name="mail_requests",
  *     indexes={
- *         @ORM\Index(name="campaign_idx", columns={"campaign"})
+ *         @ORM\Index(name="chunk_campaign_idx", columns={"campaign"})
  *     }
  * )
  */
