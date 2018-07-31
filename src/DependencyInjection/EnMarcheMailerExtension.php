@@ -24,6 +24,7 @@ use EnMarche\MailerBundle\Repository\MailVarsRepository;
 use EnMarche\MailerBundle\Test\DebugMailPost;
 use EnMarche\MailerBundle\MailPost\MailPost;
 use EnMarche\MailerBundle\MailPost\MailPostInterface;
+use Ramsey\Uuid\Doctrine\UuidType;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\Alias;
 use Symfony\Component\DependencyInjection\Compiler\ServiceLocatorTagPass;
@@ -125,6 +126,9 @@ class EnMarcheMailerExtension extends Extension implements PrependExtensionInter
             ];
             if (!empty($config['database_connexion'])) {
                 $doctrineConfig['dbal']['connections'][$this->databaseConnexion] = $config['database_connexion'];
+            }
+            if (\class_exists(UuidType::class)) {
+                $doctrineConfig['dbal']['types'][] = UuidType::class;
             }
             $container->prependExtensionConfig('doctrine', $doctrineConfig);
         }
