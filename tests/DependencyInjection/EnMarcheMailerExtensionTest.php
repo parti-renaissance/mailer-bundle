@@ -49,9 +49,6 @@ class EnMarcheMailerExtensionTest extends TestCase
     {
         $this->extension->load([], $this->container);
 
-        // Connexion should be off
-        $this->assertHasAMQPConnexion(false);
-
         // Producer should be off
         $this->assertContainerHasAlias(false, MailerInterface::class);
         $this->assertContainerHasAlias(false, TransporterInterface::class);
@@ -59,7 +56,6 @@ class EnMarcheMailerExtensionTest extends TestCase
         $this->assertContainerHasAlias(false, MailPostInterface::class);
         $this->assertContainerHasDefinition(false, 'en_marche_mailer.mailer.default');
         $this->assertContainerHasDefinition(false, 'en_marche_mailer.mailer.transporter.amqp');
-        $this->assertContainerHasDefinition(false, 'old_sound_rabbit_mq.en_marche_mail_producer');
         $this->assertContainerHasMailFactory(false, 'en_marche_mailer.mail_factory.default');
         $this->assertContainerHasMailPost(false, 'en_marche_mailer.mail_post.default');
     }
@@ -68,9 +64,9 @@ class EnMarcheMailerExtensionTest extends TestCase
      * @expectedException \EnMarche\MailerBundle\Exception\InvalidTransporterTypeException
      * @expectedExceptionMessage The id "en_marche_mailer.mailer.transporter.wrong" was not found. Is "wrong" a valid type?
      */
-    public function testProducerConfigRequiresValidTransporterType()
+    public function testMailPostConfigRequiresValidTransporterType()
     {
-        $config = ['producer' => [
+        $config = ['mail_post' => [
             'app_name' => 'test',
             'transport' => ['type' => 'wrong'],
         ]];
@@ -78,11 +74,11 @@ class EnMarcheMailerExtensionTest extends TestCase
         $this->extension->load([$config], $this->container);
     }
 
-    public function testProducerConfigWithCustomTransporterType()
+    public function testMailPostConfigWithCustomTransporterType()
     {
         $transporter = $this->container->setDefinition('en_marche_mailer.mailer.transporter.test', new Definition());
 
-        $config = ['producer' => [
+        $config = ['mail_post' => [
             'app_name' => 'test',
             'transport' => ['type' => 'test'],
         ]];
@@ -92,30 +88,10 @@ class EnMarcheMailerExtensionTest extends TestCase
         $this->assertSame($transporter, $this->container->findDefinition(TransporterInterface::class));
     }
 
-    /**
-     * @expectedException \LogicException
-     * @expectedExceptionMessage Bundle "OldSoundRabbitMqBundle" is needed.
-     */
-    public function testProducerConfigNeedsOldSoundExtension()
+    public function testMailPostConfig()
     {
         $config = [
-            'producer' => [
-                'app_name' => 'test',
-            ],
-            'amqp_connexion' => [
-                'url' => 'amqp_dsn',
-            ],
-        ];
-
-        $this->extension->load([$config], $this->container);
-    }
-
-    public function testProducerConfig()
-    {
-        $this->registerBundles('OldSoundRabbitMqBundle');
-
-        $config = [
-            'producer' => [
+            'mail_post' => [
                 'app_name' => 'test',
             ],
             'amqp_connexion' => [
@@ -125,7 +101,6 @@ class EnMarcheMailerExtensionTest extends TestCase
 
         $this->extension->load([$config], $this->container);
 
-        $this->assertHasAMQPConnexion(true);
         $this->assertContainerHasAlias(true, MailerInterface::class);
         $this->assertContainerHasAlias(true, 'en_marche_mailer.mailer.transporter.default');
         $this->assertContainerHasAlias(true, TransporterInterface::class);
@@ -133,19 +108,21 @@ class EnMarcheMailerExtensionTest extends TestCase
         $this->assertContainerHasAlias(true, MailPostInterface::class);
         $this->assertContainerHasDefinition(true, 'en_marche_mailer.mailer.default');
         $this->assertContainerHasDefinition(true, 'en_marche_mailer.mailer.transporter.amqp');
-        $this->assertContainerHasDefinition(true, 'old_sound_rabbit_mq.en_marche_mail_producer', false);
         $this->assertContainerHasMailFactory(true, 'en_marche_mailer.mail_factory.default', true);
         $this->assertContainerHasMailPost(true, 'en_marche_mailer.mail_post.default', true);
 
         $this->assertCount(
             7,
             $this->container->getAliases(),
-            '2 aliases are set by Symfony for the container itself, 6 for the mail producers.'
+            '2 aliases are set by Symfony for the container itself, 6 for the mail post.'
         );
+        foreach ($this->container->getDefinitions() as $id => $definition) {
+            var_dump($id);
+        }
         $this->assertCount(
-            8,
+            5,
             $this->container->getDefinitions(),
-            '1 definition is set for the container, 2 for the connexion, 5 for the mail producer.'
+            '1 definition is set for the container, 4 for the mail post.'
         );
 
         $mailer = $this->container->getDefinition('en_marche_mailer.mailer.default');
@@ -165,35 +142,16 @@ class EnMarcheMailerExtensionTest extends TestCase
             $transporter
         );
         $this->assertSame(AmqpMailTransporter::class, $transporter->getClass());
-        $this->assertReference('old_sound_rabbit_mq.en_marche_mail_producer', $transporter->getArgument(0));
+        $this->assertReference('old_sound_rabbit_mq.en_marche_mailer_mail_producer', $transporter->getArgument(0));
         $this->assertSame(Mail::DEFAULT_CHUNK_SIZE, $transporter->getArgument(1));
         $this->assertSame('em_mails', $transporter->getArgument(2));
         $this->assertReference('monolog.logger.en_marche_mailer', $transporter->getArgument('$logger'), ContainerInterface::NULL_ON_INVALID_REFERENCE);
-
-        $mailProducer = $this->container->getDefinition('old_sound_rabbit_mq.en_marche_mail_producer');
-
-        $this->assertSame('%old_sound_rabbit_mq.producer.class%', $mailProducer->getClass());
-        $this->assertArrayHasKey('old_sound_rabbit_mq.base_amqp', $mailProducer->getTags());
-        $this->assertArrayHasKey('old_sound_rabbit_mq.producer', $mailProducer->getTags());
-        $this->assertCount(1, $mailProducer->getMethodCalls());
-        $this->assertSame(['setExchangeOptions', [
-            [
-                'name' => 'en_marche_mailer',
-                'type' => 'direct',
-                'passive' => true,
-                'declare' => false,
-            ]
-        ]], $mailProducer->getMethodCalls()[0]);
-        $this->assertCount(1, $mailProducer->getArguments());
-        $this->assertReference('old_sound_rabbit_mq.connexion.en_marche_mailer', $mailProducer->getArgument(0));
     }
 
-    public function testProducerConfigWithCustomMailPosts()
+    public function testMailPostConfigWithCustomMailPosts()
     {
-        $this->registerBundles('OldSoundRabbitMqBundle');
-
         $config = [
-            'producer' => [
+            'mail_post' => [
                 'app_name' => 'test',
                 'mail_posts' => [
                     'custom_1' => [
@@ -230,7 +188,7 @@ class EnMarcheMailerExtensionTest extends TestCase
             'Same aliases as previous test.'
         );
         $this->assertCount(
-            8 + 4,
+            5 + 4,
             $this->container->getDefinitions(),
             '2 definitions more than previous test for configured mail posts, and another 2 for their mail factories.'
         );
@@ -282,12 +240,10 @@ class EnMarcheMailerExtensionTest extends TestCase
         );
     }
 
-    public function testProducerConfigWithDefaultCustomMailPost()
+    public function testMailConfigWithDefaultCustomMailPost()
     {
-        $this->registerBundles('OldSoundRabbitMqBundle');
-
         $config = [
-            'producer' => [
+            'mail_post' => [
                 'app_name' => 'test',
                 'mail_posts' => [
                     'custom' => [
@@ -311,9 +267,9 @@ class EnMarcheMailerExtensionTest extends TestCase
             'Same aliases as previous test.'
         );
         $this->assertCount(
-            8 + 2,
+            5 + 2,
             $this->container->getDefinitions(),
-            '2 definitions more than previous test for the configured mail post and its mail factory.'
+            '2 definitions more than the default test for the configured mail post and its mail factory.'
         );
 
         $this->assertContainerHasMailFactory(
@@ -353,11 +309,11 @@ class EnMarcheMailerExtensionTest extends TestCase
         );
     }
 
-    public function testProducerConfigWithCustomMailPostAndDebug()
+    public function testMailPostConfigWithCustomMailPostAndDebug()
     {
         $this->container->setParameter('kernel.environment', 'test');
         $config = [
-            'producer' => [
+            'mail_post' => [
                 'app_name' => 'test',
                 'mail_posts' => [
                     'custom' => [
@@ -373,7 +329,7 @@ class EnMarcheMailerExtensionTest extends TestCase
         ];
 
         $prependedTestConfig = [
-            'producer' => [
+            'mail_post' => [
                 'transport' => ['type' => 'null'],
             ],
         ];
@@ -473,32 +429,6 @@ class EnMarcheMailerExtensionTest extends TestCase
         $this->assertSame($invalidBehavior, $reference->getInvalidBehavior());
     }
 
-    private function assertHasAMQPConnexion(bool $has, array $config = ['url' => 'amqp_dsn']): void
-    {
-        $this->assertContainerHasDefinition($has, 'old_sound_rabbit_mq.connection_factory.en_marche_mailer');
-        $this->assertContainerHasDefinition($has, 'old_sound_rabbit_mq.connexion.en_marche_mailer', false);
-
-        if ($has) {
-            $amqpConnexionFactory = $this->container->getDefinition('old_sound_rabbit_mq.connection_factory.en_marche_mailer');
-            $amqpConnexion = $this->container->getDefinition('old_sound_rabbit_mq.connexion.en_marche_mailer');
-
-            // Factory
-            $this->assertSame('%old_sound_rabbit_mq.connection_factory.class%', $amqpConnexionFactory->getClass());
-            $this->assertCount(2, $amqpConnexionFactory->getArguments());
-            $this->assertSame('%old_sound_rabbit_mq.connection.class%', $amqpConnexionFactory->getArgument(0));
-            $this->assertSame($config, $amqpConnexionFactory->getArgument(1));
-
-            // Connexion
-            $this->assertSame('%old_sound_rabbit_mq.connection.class%', $amqpConnexion->getClass());
-            $this->assertArrayHasKey('old_sound_rabbit_mq.connection', $amqpConnexion->getTags());
-            $this->assertEquals(
-                [new Reference('old_sound_rabbit_mq.connection_factory.en_marche_mailer'), 'createConnection'],
-                $amqpConnexion->getFactory()
-            );
-            $this->assertCount(0, $amqpConnexion->getArguments());
-        }
-    }
-
     private function assertContainerHasMailFactory(
         bool $has,
         string $id,
@@ -547,10 +477,5 @@ class EnMarcheMailerExtensionTest extends TestCase
             $this->assertReference($mailerId, $mailPost->getArgument(0));
             $this->assertReference($mailFactoryId, $mailPost->getArgument(1));
         }
-    }
-
-    private function registerBundles($bundles): void
-    {
-        $this->container->setParameter('kernel.bundles', \array_fill_keys((array) $bundles, true));
     }
 }

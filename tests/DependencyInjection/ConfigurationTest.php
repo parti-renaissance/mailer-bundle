@@ -41,48 +41,48 @@ class ConfigurationTest extends TestCase
 
     /**
      * @expectedException \Symfony\Component\Config\Definition\Exception\InvalidConfigurationException
-     * @expectedExceptionMessage The child node "app_name" at path "en_marche_mailer.producer" must be configured.
+     * @expectedExceptionMessage The child node "app_name" at path "en_marche_mailer.mail_post" must be configured.
      */
-    public function testProducerConfigRequiresAppName()
+    public function testMailPostConfigRequiresAppName()
     {
-        $producer = ['producer' => null];
+        $mailPost = ['mail_post' => null];
 
-        $this->processor->processConfiguration($this->configuration, [$producer]);
+        $this->processor->processConfiguration($this->configuration, [$mailPost]);
     }
 
     /**
      * @expectedException \Symfony\Component\Config\Definition\Exception\InvalidConfigurationException
      * @expectedExceptionMessage Invalid configuration for path "en_marche_mailer": Current config needs AMQP connexion to transport mails.
      */
-    public function testProducerConfigRequiresAMQPConnexion()
+    public function testMailPostConfigRequiresAMQPConnexion()
     {
-        $producer = ['producer' => [
+        $mailPost = ['mail_post' => [
             'app_name' => 'test',
         ]];
 
-        $this->processor->processConfiguration($this->configuration, [$producer]);
+        $this->processor->processConfiguration($this->configuration, [$mailPost]);
     }
 
-    public function testProducerConfig()
+    public function testMailPostConfig()
     {
-        $producer = [
-            'producer' => [
+        $mailPost = [
+            'mail_post' => [
                 'app_name' => 'test',
             ],
             'amqp_connexion' => ['url' => 'amqp_dsn'],
         ];
 
-        $config = $this->processor->processConfiguration($this->configuration, [$producer]);
+        $config = $this->processor->processConfiguration($this->configuration, [$mailPost]);
 
-        $expectedConfig = \array_merge_recursive($producer, $this->getDefaultProducerConfig());
+        $expectedConfig = \array_merge_recursive($mailPost, $this->getDefaultMailPostConfig());
 
         $this->assertSame($expectedConfig, $config);
     }
 
-    public function testProducerConfigWithMailPosts()
+    public function testMailPostConfigWithMailPosts()
     {
-        $producer = [
-            'producer' => [
+        $mailPost = [
+            'mail_post' => [
                 'app_name' => 'test',
                 'mail_posts' => [
                     'mail_post_1' => [
@@ -104,11 +104,11 @@ class ConfigurationTest extends TestCase
             'amqp_connexion' => ['url' => 'amqp_dsn'],
         ];
 
-        $config = $this->processor->processConfiguration($this->configuration, [$producer]);
+        $config = $this->processor->processConfiguration($this->configuration, [$mailPost]);
 
         $expectedConfig = \array_merge_recursive(
             [
-                'producer' => [
+                'mail_post' => [
                     'app_name' => 'test',
                     'mail_posts' => [
                         'mail_post_1' => [
@@ -128,7 +128,7 @@ class ConfigurationTest extends TestCase
             ],
             [
                 // Config should have added the following defaults
-                'producer' => [
+                'mail_post' => [
                     'mail_posts' => [
                         'mail_post_1' => [
                             'bcc' => [],
@@ -141,7 +141,7 @@ class ConfigurationTest extends TestCase
                     ],
                 ],
             ],
-            $this->getDefaultProducerConfig()
+            $this->getDefaultMailPostConfig()
         );
 
         $this->assertSame($expectedConfig, $config);
@@ -149,15 +149,13 @@ class ConfigurationTest extends TestCase
 
     private function getDefaultConfig(): array
     {
-        return [
-            'amqp_connexion' => [],
-        ];
+        return [];
     }
 
-    private function getDefaultProducerConfig(): array
+    private function getDefaultMailPostConfig(): array
     {
         return [
-            'producer' => [
+            'mail_post' => [
                 'enabled' => true,
                 'transport' => [
                     'type' => TransporterType::AMQP,

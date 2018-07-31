@@ -18,30 +18,61 @@ use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Extension\PrependExtensionInterface;
 use Symfony\Component\DependencyInjection\Loader\XmlFileLoader;
 use Symfony\Component\DependencyInjection\Reference;
-use Symfony\Component\HttpKernel\DependencyInjection\ConfigurableExtension;
+use Symfony\Component\HttpKernel\DependencyInjection\Extension;
 
-class EnMarcheMailerExtension extends ConfigurableExtension implements PrependExtensionInterface
+class EnMarcheMailerExtension extends Extension implements PrependExtensionInterface
 {
-    private const AMQP_CONNEXION_ID = 'old_sound_rabbit_mq.connexion.en_marche_mailer';
-
-    private const MAIL_PRODUCER_ID = 'old_sound_rabbit_mq.en_marche_mail_producer';
-    private const MAIL_REQUEST_PRODUCER_ID = 'old_sound_rabbit_mq.en_marche_mail_request_producer';
-    private const PRODUCER_IDS = [
-        'mail' => self::MAIL_PRODUCER_ID,
-        'mail_request' => self::MAIL_REQUEST_PRODUCER_ID,
-    ];
-
     private $debug;
-    private $amqpConnexionConfig;
-    private $amqpConnexionSet = false;
-    private $databaseConnexionConfig;
-    private $databaseConnexionSet = false;
+    private $amqpConnexion;
+    private $databaseConnexion;
 
     /**
      * {@inheritdoc}
      */
     public function prepend(ContainerBuilder $container)
     {
+        $config = $this->getProcessedConfig($container);
+
+        if (!empty($config['amqp_connexion']) && $this->checkContainerHasBundle($container, 'OldSoundRabbitMqBundle', false)) {
+            $this->amqpConnexion = $config['amqp_connexion']['name'] ?? 'en_marche_mailer';
+            unset($config['amqp_connexion']['name']);
+
+            $amqpConfig = [
+                'connections' => ['en_marche_mailer' => $config['amqp_connexion']],
+            ];
+            if (isset($config['mail_post']['transport']['type']) && TransporterType::AMQP === $config['mail_post']['transport']['type']) {
+                $amqpConfig['producers']['en_marche_mailer_mail'] = $this->createAMQPProducerDefinition($this->amqpConnexion);
+            }
+
+            if (!empty($config['amqp_connexion'])) {
+                $container->prependExtensionConfig('old_sound_rabbit_mq', $amqpConfig);
+            }
+        }
+
+        if (!empty($config['database_connexion']) && $this->checkContainerHasBundle($container, 'DoctrineBundle', false)) {
+            $this->databaseConnexion = $config['database_connexion']['name'] ?? 'en_marche_mailer';
+            unset($config['database_connexion']['name']);
+
+            $doctrineConfig = [
+                'orm' => [
+                    'auto_generate_proxy_classes' => "%kernel.debug%",
+                    'naming_strategy' => 'doctrine.orm.naming_strategy.underscore',
+                    'auto_mapping' => false,
+                    'mappings' => ['EnMarcheMailerBundle' => [
+                        'mapping' => true,
+                        'type' => 'annotation',
+                        'dir' => 'Entity',
+                        'alias' => 'EnMarcheBundle',
+                        'prefix' => 'EnMarcheMailer\Entity',
+                    ]],
+                ],
+            ];
+            if (empty($config['database_connexion'])) {
+                $doctrineConfig['dbal']['connections'][$this->databaseConnexion] = $config['database_connexion'];
+            }
+            $container->prependExtensionConfig('doctrine', $doctrineConfig);
+        }
+
         if ($this->checkContainerHasBundle($container, 'MonologBundle', false)) {
             $container->prependExtensionConfig('monolog', [
                 'channels' => ['en_marche_mailer'],
@@ -52,26 +83,61 @@ class EnMarcheMailerExtension extends ConfigurableExtension implements PrependEx
     /**
      * {@inheritdoc}
      */
-    protected function loadInternal(array $config, ContainerBuilder $container)
+    final public function load(array $configs, ContainerBuilder $container)
     {
+        $config = $this->getProcessedConfig($container, $configs);
         $loader = new XmlFileLoader($container, new FileLocator(__DIR__.'/../Resources/config'));
 
         if ($this->debug = 'test' === $container->getParameter('kernel.environment')) {
             $loader->load('mailer_test.xml');
         }
-
-        $this->amqpConnexionConfig = [
-            'connexion' => $config['amqp_connexion'],
-        ];
-        $this->databaseConnexionConfig = $config['mail_database_url'] ?? '';
-
-        if (isset($config['producer'])) {
-            $this->registerProducerConfiguration($config['producer'], $container, $loader);
+        if (isset($config['mail_post'])) {
+            $this->registerMailPostConfiguration($config['mail_post'], $container, $loader);
         }
-
     }
 
-    private function registerProducerConfiguration(array $config, ContainerBuilder $container, XmlFileLoader $loader)
+    private function getProcessedConfig(ContainerBuilder $container, array $configs = null): array
+    {
+        $configs = $configs ?: $container->getExtensionConfig('en_marche_mailer');
+
+        return $this->processConfiguration(new Configuration(), $configs);
+    }
+
+    private function checkContainerHasBundle(ContainerBuilder $container, string $bundle, bool $throw = true): bool
+    {
+        if (!\array_key_exists($bundle, $container->getParameter('kernel.bundles'))) {
+            if ($throw) {
+                throw new \LogicException(\sprintf('Bundle "%s" is needed.', $bundle));
+            }
+
+            return false;
+        }
+
+        return true;
+    }
+
+    private function createAMQPProducerDefinition(string $connexion): array
+    {
+        return [
+            'connection' => $connexion,
+            'exchange_options' => ['name' => 'en_marche_mailer', 'type' => 'direct'],
+        ];
+    }
+
+    private function createAMQPConsumerDefinition(string $connexion, string $callback, array $routingKeys = []): array
+    {
+        return \array_merge($this->createAMQPProducerDefinition($connexion), [
+            'queue_options' => [
+                'name' => 'en_marche_mailer',
+                'durable' => false,
+                'routing_keys' => $routingKeys,
+            ],
+            'callback' => $callback,
+            'qos_options' => ['prefetch_size' => 0, 'prefetch_count' => 1, 'global' => false],
+        ]);
+    }
+
+    private function registerMailPostConfiguration(array $config, ContainerBuilder $container, XmlFileLoader $loader)
     {
         if (!$this->isConfigEnabled($container, $config)) {
             return;
@@ -87,11 +153,8 @@ class EnMarcheMailerExtension extends ConfigurableExtension implements PrependEx
 
         switch ($config['transport']['type']) {
             case TransporterType::AMQP:
-                $this->configureAMQPConnexion($container);
-                $this->addAMQPProducer($container, 'mail');
-
                 $transporter = $container->getDefinition($transporterId)
-                    ->setArgument(0, new Reference(self::PRODUCER_IDS['mail']))
+                    ->setArgument(0, new Reference('old_sound_rabbit_mq.en_marche_mailer_mail_producer'))
                     ->setArgument(1, $config['transport']['chunk_size'])
                     ->setArgument(2, 'em_mails')
                 ;
@@ -104,56 +167,6 @@ class EnMarcheMailerExtension extends ConfigurableExtension implements PrependEx
         }
 
         $this->configureMailPost($container, $config['app_name'], $config['mail_posts'], $config['default_mail_post']);
-    }
-
-    /**
-     * @see \OldSound\RabbitMqBundle\DependencyInjection\OldSoundRabbitMqExtension::loadConnections()
-     */
-    private function configureAMQPConnexion(ContainerBuilder $container): void
-    {
-        if ($this->amqpConnexionSet) {
-            return;
-        }
-
-        $this->checkContainerHasBundle($container, 'OldSoundRabbitMqBundle');
-
-        $connectionSuffix = isset($this->amqpConnexionConfig['connexion']['use_socket']) ? 'socket_connection.class' : 'connection.class';
-        $classParam =
-            isset($this->amqpConnexionConfig['connexion']['lazy'])
-                ? '%old_sound_rabbit_mq.lazy.'.$connectionSuffix.'%'
-                : '%old_sound_rabbit_mq.'.$connectionSuffix.'%';
-
-        $container->register('old_sound_rabbit_mq.connection_factory.en_marche_mailer', '%old_sound_rabbit_mq.connection_factory.class%')
-            ->setArguments([$classParam, $this->amqpConnexionConfig['connexion']])
-            ->setPublic(false)
-        ;
-        $container->register(self::AMQP_CONNEXION_ID, $classParam)
-            ->setFactory([new Reference('old_sound_rabbit_mq.connection_factory.en_marche_mailer'), 'createConnection'])
-            ->addTag('old_sound_rabbit_mq.connection')
-            ->setPublic(true)
-        ;
-
-        $this->amqpConnexionSet = true;
-    }
-
-    /**
-     * @see \OldSound\RabbitMqBundle\DependencyInjection\OldSoundRabbitMqExtension::loadProducers()
-     */
-    private function addAMQPProducer(ContainerBuilder $container, string $name): void
-    {
-
-        $container->register(self::PRODUCER_IDS[$name], '%old_sound_rabbit_mq.producer.class%')
-            ->addArgument(new Reference(self::AMQP_CONNEXION_ID))
-            ->addMethodCall('setExchangeOptions', [[
-                'name' => 'en_marche_mailer',
-                'type' => 'direct',
-                'passive' => true,
-                'declare' => false,
-            ]])
-            ->setPublic(true)
-            ->addTag('old_sound_rabbit_mq.base_amqp')
-            ->addTag('old_sound_rabbit_mq.producer')
-        ;
     }
 
     private function configureMailPost(ContainerBuilder $container, string $appName, array $mailPosts, string $defaultPostName): void
@@ -203,37 +216,11 @@ class EnMarcheMailerExtension extends ConfigurableExtension implements PrependEx
         }
     }
 
-    private function configureDatabaseConnexion(ContainerBuilder $container)
-    {
-        if ($this->databaseConnexionSet) {
-            return;
-        }
-
-        $this->checkContainerHasBundle($container, 'DoctrineBundle');
-
-        // todo
-
-        $this->databaseConnexionSet = true;
-    }
-
     private function injectLogger(Definition $definition): void
     {
         $definition->setArgument('$logger', new Reference(
             'monolog.logger.en_marche_mailer',
             ContainerInterface::NULL_ON_INVALID_REFERENCE
         ));
-    }
-
-    private function checkContainerHasBundle(ContainerBuilder $container, string $bundle, bool $throw = true): bool
-    {
-        if (!\array_key_exists($bundle, $container->getParameter('kernel.bundles'))) {
-            if ($throw) {
-                throw new \LogicException(\sprintf('Bundle "%s" is needed.', $bundle));
-            }
-
-            return false;
-        }
-
-        return true;
     }
 }
