@@ -7,7 +7,7 @@ use EnMarche\MailerBundle\Mail\Recipient;
 use EnMarche\MailerBundle\Mail\RecipientInterface;
 use EnMarche\MailerBundle\Mailer\MailerInterface;
 use EnMarche\MailerBundle\Tests\Mail\TotoMail;
-use EnMarche\MailerBundle\Tests\Test\DummyMail;
+use EnMarche\MailerBundle\Test\DummyMail;
 use EnMarche\MailerBundle\MailPost\MailPost;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;

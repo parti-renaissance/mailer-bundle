@@ -9,7 +9,7 @@ use EnMarche\MailerBundle\Mailer\Mailer;
 use EnMarche\MailerBundle\Mailer\MailerInterface;
 use EnMarche\MailerBundle\Mailer\TransporterInterface;
 use EnMarche\MailerBundle\Mailer\Transporter\AmqpMailTransporter;
-use EnMarche\MailerBundle\Tests\Test\DebugMailPost;
+use EnMarche\MailerBundle\Test\DebugMailPost;
 use EnMarche\MailerBundle\MailPost\MailPost;
 use EnMarche\MailerBundle\MailPost\MailPostInterface;
 use PHPUnit\Framework\TestCase;

@@ -21,7 +21,7 @@ use EnMarche\MailerBundle\Mailer\Transporter\TransporterType;
 use EnMarche\MailerBundle\Repository\AddressRepository;
 use EnMarche\MailerBundle\Repository\MailRequestRepository;
 use EnMarche\MailerBundle\Repository\MailVarsRepository;
-use EnMarche\MailerBundle\Tests\Test\DebugMailPost;
+use EnMarche\MailerBundle\Test\DebugMailPost;
 use EnMarche\MailerBundle\MailPost\MailPost;
 use EnMarche\MailerBundle\MailPost\MailPostInterface;
 use Symfony\Component\Config\FileLocator;

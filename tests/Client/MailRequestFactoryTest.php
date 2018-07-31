@@ -10,7 +10,7 @@ use EnMarche\MailerBundle\Mail\MailInterface;
 use EnMarche\MailerBundle\Mail\Recipient;
 use EnMarche\MailerBundle\Repository\AddressRepository;
 use EnMarche\MailerBundle\Repository\MailVarsRepository;
-use EnMarche\MailerBundle\Tests\Test\DummyMail;
+use EnMarche\MailerBundle\Test\DummyMail;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Ramsey\Uuid\Uuid;

@@ -1,6 +1,6 @@
 <?php
 
-namespace EnMarche\MailerBundle\Tests\Test;
+namespace EnMarche\MailerBundle\Test;
 
 use EnMarche\MailerBundle\Mail\MailInterface;
 use EnMarche\MailerBundle\Mailer\TransporterInterface;

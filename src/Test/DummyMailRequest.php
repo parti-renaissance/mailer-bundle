@@ -1,6 +1,6 @@
 <?php
 
-namespace EnMarche\MailerBundle\Tests\Test;
+namespace EnMarche\MailerBundle\Test;
 
 use EnMarche\MailerBundle\Client\MailRequestInterface;
 use EnMarche\MailerBundle\Entity\Address;

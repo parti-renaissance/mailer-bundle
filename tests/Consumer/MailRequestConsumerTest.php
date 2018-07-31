@@ -11,7 +11,7 @@ use EnMarche\MailerBundle\Exception\InvalidMailRequestException;
 use EnMarche\MailerBundle\Exception\InvalidMailResponseException;
 use EnMarche\MailerBundle\Repository\MailRequestRepository;
 use EnMarche\MailerBundle\Tests\LoggerTestTrait;
-use EnMarche\MailerBundle\Tests\Test\DummyMailRequest;
+use EnMarche\MailerBundle\Test\DummyMailRequest;
 use GuzzleHttp\Exception\SeekException;
 use GuzzleHttp\Exception\TransferException;
 use OldSound\RabbitMqBundle\RabbitMq\ConsumerInterface;

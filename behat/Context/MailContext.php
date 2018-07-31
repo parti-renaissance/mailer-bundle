@@ -3,7 +3,7 @@
 use Behat\MinkExtension\Context\RawMinkContext;
 use Behat\Symfony2Extension\Context\KernelDictionary;
 use EnMarche\MailerBundle\Mail\MailInterface;
-use EnMarche\MailerBundle\Tests\Test\DebugMailPost;
+use EnMarche\MailerBundle\Test\DebugMailPost;
 use EnMarche\MailerBundle\MailPost\MailPostInterface;
 
 class MailContext extends RawMinkContext

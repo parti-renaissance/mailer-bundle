@@ -6,7 +6,7 @@ use EnMarche\MailerBundle\Client\MailRequestInterface;
 use EnMarche\MailerBundle\Client\PayloadFactory\MailjetPayloadFactory;
 use EnMarche\MailerBundle\Entity\Address;
 use EnMarche\MailerBundle\Entity\RecipientVars;
-use EnMarche\MailerBundle\Tests\Test\DummyMailRequest;
+use EnMarche\MailerBundle\Test\DummyMailRequest;
 use PHPUnit\Framework\TestCase;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;

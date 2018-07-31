@@ -8,7 +8,7 @@ use EnMarche\MailerBundle\Client\MailRequestFactoryInterface;
 use EnMarche\MailerBundle\Client\MailRequestInterface;
 use EnMarche\MailerBundle\Consumer\MailConsumer;
 use EnMarche\MailerBundle\Tests\LoggerTestTrait;
-use EnMarche\MailerBundle\Tests\Test\DummyMail;
+use EnMarche\MailerBundle\Test\DummyMail;
 use OldSound\RabbitMqBundle\RabbitMq\ConsumerInterface;
 use OldSound\RabbitMqBundle\RabbitMq\ProducerInterface;
 use PhpAmqpLib\Message\AMQPMessage;

@@ -1,6 +1,6 @@
 <?php
 
-namespace EnMarche\MailerBundle\Tests\Test;
+namespace EnMarche\MailerBundle\Test;
 
 use EnMarche\MailerBundle\Mail\MailFactory;
 use EnMarche\MailerBundle\Mail\MailFactoryInterface;
@@ -9,6 +9,7 @@ use EnMarche\MailerBundle\Mail\RecipientInterface;
 use EnMarche\MailerBundle\Mailer\Mailer;
 use EnMarche\MailerBundle\Mailer\MailerInterface;
 use EnMarche\MailerBundle\MailPost\MailPostInterface;
+use EnMarche\MailerBundle\Test\NullMailTransporter;
 
 class DebugMailPost implements MailPostInterface
 {

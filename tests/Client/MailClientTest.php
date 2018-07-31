@@ -5,7 +5,7 @@ namespace EnMarche\MailerBundle\Tests\Client;
 use EnMarche\MailerBundle\Client\MailClient;
 use EnMarche\MailerBundle\Client\MailRequestInterface;
 use EnMarche\MailerBundle\Client\PayloadFactoryInterface;
-use EnMarche\MailerBundle\Tests\Test\DummyMailRequest;
+use EnMarche\MailerBundle\Test\DummyMailRequest;
 use GuzzleHttp\ClientInterface;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
