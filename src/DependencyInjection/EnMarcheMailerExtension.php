@@ -154,7 +154,7 @@ class EnMarcheMailerExtension extends Extension implements PrependExtensionInter
         switch ($config['transport']['type']) {
             case TransporterType::AMQP:
                 $transporter = $container->getDefinition($transporterId)
-                    ->setArgument(0, new Reference('old_sound_rabbit_mq.en_marche_mailer_mail_producer'))
+                    ->setArgument(0, new Reference(\sprintf('old_sound_rabbit_mq.%s_mail_producer', $this->amqpConnexion)))
                     ->setArgument(1, $config['transport']['chunk_size'])
                     ->setArgument(2, 'em_mails')
                 ;
