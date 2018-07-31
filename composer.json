@@ -18,7 +18,8 @@
     },
     "autoload": {
         "psr-4": {
-            "EnMarche\\MailerBundle\\": "src"
+            "EnMarche\\MailerBundle\\": "src",
+            "EnMarche\\MailerBundle\\Behat\\Context\\": "behat/Context"
         }
     },
     "autoload-dev": {

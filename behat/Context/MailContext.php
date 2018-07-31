@@ -1,5 +1,7 @@
 <?php
 
+namespace EnMarche\MailerBundle\Behat\Context;
+
 use Behat\MinkExtension\Context\RawMinkContext;
 use Behat\Symfony2Extension\Context\KernelDictionary;
 use EnMarche\MailerBundle\Mail\MailInterface;
