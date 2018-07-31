@@ -33,7 +33,7 @@ class EnMarcheMailerExtension extends Extension implements PrependExtensionInter
     {
         $config = $this->getProcessedConfig($container);
 
-        if (!empty($config['amqp_connexion']) && $this->checkContainerHasBundle($container, 'OldSoundRabbitMqBundle', false)) {
+        if (!empty($config['amqp_connexion']) && $this->checkContainerHasBundle($container, 'OldSoundRabbitMqBundle')) {
             $this->amqpConnexion = $config['amqp_connexion']['name'] ?? 'en_marche_mailer';
             unset($config['amqp_connexion']['name']);
 
@@ -49,7 +49,7 @@ class EnMarcheMailerExtension extends Extension implements PrependExtensionInter
             }
         }
 
-        if (!empty($config['database_connexion']) && $this->checkContainerHasBundle($container, 'DoctrineBundle', false)) {
+        if (!empty($config['database_connexion']) && $this->checkContainerHasBundle($container, 'DoctrineBundle')) {
             $this->databaseConnexion = $config['database_connexion']['name'] ?? 'en_marche_mailer';
             unset($config['database_connexion']['name']);
 

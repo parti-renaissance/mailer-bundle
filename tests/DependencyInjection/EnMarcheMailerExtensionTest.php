@@ -74,14 +74,30 @@ class EnMarcheMailerExtensionTest extends TestCase
         $this->extension->load([$config], $this->container);
     }
 
+    /**
+     * @expectedException \Symfony\Component\Config\Definition\Exception\InvalidConfigurationException
+     * @expectedExceptionMessage Invalid configuration for path "en_marche_mailer": Current config needs AMQP connexion to transport mails.
+     */
+    public function testMailPostConfigRequiresAMQPConnexion()
+    {
+        $config = ['mail_post' => [
+            'app_name' => 'test',
+        ]];
+
+        $this->extension->load([$config], $this->container);
+    }
+
     public function testMailPostConfigWithCustomTransporterType()
     {
         $transporter = $this->container->setDefinition('en_marche_mailer.mailer.transporter.test', new Definition());
 
-        $config = ['mail_post' => [
-            'app_name' => 'test',
-            'transport' => ['type' => 'test'],
-        ]];
+        $config = [
+            'mail_post' => [
+                'app_name' => 'test',
+                'transport' => ['type' => 'test'],
+            ],
+            'amqp_connexion' => ['name' => 'default'],
+        ];
 
         $this->extension->load([$config], $this->container);
 
@@ -116,9 +132,6 @@ class EnMarcheMailerExtensionTest extends TestCase
             $this->container->getAliases(),
             '2 aliases are set by Symfony for the container itself, 6 for the mail post.'
         );
-        foreach ($this->container->getDefinitions() as $id => $definition) {
-            var_dump($id);
-        }
         $this->assertCount(
             5,
             $this->container->getDefinitions(),
