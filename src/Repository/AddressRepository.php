@@ -26,6 +26,6 @@ class AddressRepository extends EntityRepository
      */
     public function findOneForRecipient(RecipientInterface $recipient)
     {
-        return $this->findOneForEmail($recipient->getEmail());
+        return $this->findOneForEmail($recipient->getEmail(), $recipient->getName());
     }
 }

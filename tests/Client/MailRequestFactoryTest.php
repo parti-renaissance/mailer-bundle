@@ -65,8 +65,7 @@ class MailRequestFactoryTest extends TestCase
             ->method('findOneForCampaign')
         ;
         $this->addressRepository->expects($this->exactly(4))
-            ->method('findOneForEmail')
-            ->withConsecutive([$replyTo[0]], [$cc[0]], [$bcc[0]], [$to[0][0]])
+            ->method('findOneForRecipient')
             ->willReturnOnConsecutiveCalls(null, null, null, null)
         ;
 
@@ -127,8 +126,7 @@ class MailRequestFactoryTest extends TestCase
             ->willReturn($mailVars)
         ;
         $this->addressRepository->expects($this->exactly(2))
-            ->method('findOneForEmail')
-            ->withConsecutive([$to[0][0]], [$to[1][0]]/* cc should not be called because it's linked to MailVars */)
+            ->method('findOneForRecipient')
         ;
 
         $mailRequest = $this->mailRequestFactory->createRequestForMail($mail);

@@ -86,8 +86,8 @@ class MailRequestConsumerTest extends TestCase
         $mailClient = $this->createMock(MailClientInterface::class);
 
         $this->mailClientRegistry->expects($this->once())
-            ->method('getClientForMailRequestType')
-            ->with('fake')
+            ->method('getClientForMailRequest')
+            ->with($mailRequest)
             ->willReturn($mailClient)
         ;
 
@@ -125,7 +125,7 @@ class MailRequestConsumerTest extends TestCase
         ;
 
         $this->mailClientRegistry->expects($this->never())
-            ->method('getClientForMailRequestType')
+            ->method('getClientForMailRequest')
         ;
 
         $this->entityManager->expects($this->never())
@@ -156,7 +156,7 @@ class MailRequestConsumerTest extends TestCase
         ;
 
         $this->mailClientRegistry->expects($this->never())
-            ->method('getClientForMailRequestType')
+            ->method('getClientForMailRequest')
         ;
 
         $this->entityManager->expects($this->never())
@@ -185,7 +185,7 @@ class MailRequestConsumerTest extends TestCase
         ;
 
         $this->mailClientRegistry->expects($this->never())
-            ->method('getClientForMailRequestType')
+            ->method('getClientForMailRequest')
         ;
 
         $this->entityManager->expects($this->never())
@@ -226,8 +226,8 @@ class MailRequestConsumerTest extends TestCase
         $mailClient = $this->createMock(MailClientInterface::class);
 
         $this->mailClientRegistry->expects($this->once())
-            ->method('getClientForMailRequestType')
-            ->with('fake')
+            ->method('getClientForMailRequest')
+            ->with($mailRequest)
             ->willThrowException($clientException)
         ;
 
@@ -261,8 +261,8 @@ class MailRequestConsumerTest extends TestCase
         ;
 
         $this->mailClientRegistry->expects($this->once())
-            ->method('getClientForMailRequestType')
-            ->with('fake')
+            ->method('getClientForMailRequest')
+            ->with($mailRequest)
             ->willThrowException($requestException)
         ;
 
@@ -313,8 +313,8 @@ class MailRequestConsumerTest extends TestCase
         ;
 
         $this->mailClientRegistry->expects($this->once())
-            ->method('getClientForMailRequestType')
-            ->with('fake')
+            ->method('getClientForMailRequest')
+            ->with($mailRequest)
             ->willThrowException($requestException)
         ;
 

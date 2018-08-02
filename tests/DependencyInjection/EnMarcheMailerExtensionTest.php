@@ -35,7 +35,7 @@ class EnMarcheMailerExtensionTest extends TestCase
         $this->container = new ContainerBuilder();
         $this->extension = new EnMarcheMailerExtension();
 
-        $this->container->setParameter('kernel.environment', 'prod');
+        $this->container->setParameter('kernel.debug', false);
         $this->container->setParameter('kernel.bundles', []);
     }
 
@@ -324,7 +324,7 @@ class EnMarcheMailerExtensionTest extends TestCase
 
     public function testMailPostConfigWithCustomMailPostAndDebug()
     {
-        $this->container->setParameter('kernel.environment', 'test');
+        $this->container->setParameter('kernel.debug', true);
         $config = [
             'mail_post' => [
                 'app_name' => 'test',
