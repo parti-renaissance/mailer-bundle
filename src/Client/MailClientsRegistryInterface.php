@@ -4,5 +4,5 @@ namespace EnMarche\MailerBundle\Client;
 
 interface MailClientsRegistryInterface
 {
-    public function getClientForMailRequestType(string $mailRequestType): MailClientInterface;
+    public function getClientForMailRequest(MailRequestInterface $mailRequest): MailClientInterface;
 }

@@ -60,7 +60,7 @@ class MailRequestConsumer implements ConsumerInterface
         }
 
         try {
-            $this->getMailClientForType($mailRequest->getType())->send($mailRequest);
+            $this->getMailClient($mailRequest)->send($mailRequest);
         } catch (GuzzleException $e) {
             $this->logger->warning('The mail request could not be processed. Retrying later.', [
                 'mail_request' => $mailRequest,
@@ -89,11 +89,8 @@ class MailRequestConsumer implements ConsumerInterface
         return ConsumerInterface::MSG_ACK;
     }
 
-    /**
-     * @throws GuzzleException
-     */
-    private function getMailClientForType(string $mailRequestType): MailClientInterface
+    private function getMailClient(MailRequestInterface $mailRequest): MailClientInterface
     {
-        return $this->mailClientsRegistry->getClientForMailRequestType($mailRequestType);
+        return $this->mailClientsRegistry->getClientForMailRequest($mailRequest);
     }
 }

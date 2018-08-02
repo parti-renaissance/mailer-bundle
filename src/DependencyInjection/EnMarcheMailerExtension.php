@@ -148,7 +148,7 @@ class EnMarcheMailerExtension extends Extension implements PrependExtensionInter
         $config = $this->getProcessedConfig($container, $configs);
         $loader = new XmlFileLoader($container, new FileLocator(__DIR__.'/../Resources/config'));
 
-        if ($this->debug = 'test' === $container->getParameter('kernel.environment')) {
+        if ($this->debug = $container->getParameter('kernel.debug')) {
             $loader->load('mail_post_test.xml');
         }
         if (isset($config['mail_post'])) {
@@ -242,7 +242,7 @@ class EnMarcheMailerExtension extends Extension implements PrependExtensionInter
         }
 
         $loader->load('mail_aggregator.xml');
-        $this->loadDoctrineConfig($container, $loader);
+        $this->loadDoctrineConfig($loader);
 
         $container->getDefinition('en_marche_mailer.client.mail_request_factory.default')
             ->addArgument(new Reference(AddressRepository::class))
@@ -264,7 +264,7 @@ class EnMarcheMailerExtension extends Extension implements PrependExtensionInter
         }
 
         $loader->load('mail_api_proxy.xml');
-        $this->loadDoctrineConfig($container, $loader);
+        $this->loadDoctrineConfig($loader);
         $mailClients = [];
 
         foreach ($config['http_clients'] as $httpClientName => $httpClientConfig) {
@@ -280,9 +280,10 @@ class EnMarcheMailerExtension extends Extension implements PrependExtensionInter
             $mailClientId = \sprintf('en_marche_mailer.%s_mail_client', $httpClientName);
             $container->register($mailClientId, MailClient::class)
                 ->addArgument(new Reference("csa_guzzle.client.en_marche_mailer_$httpClientName"))
-                ->addArgument($payloadFactoryServiceId)
+                ->addArgument(new Reference($payloadFactoryServiceId))
                 ->setPublic(false)
             ;
+            // The client name is equivalent to a mail request type here
             $mailClients[$httpClientName] = new Reference($mailClientId);
         }
 
@@ -334,6 +335,7 @@ class EnMarcheMailerExtension extends Extension implements PrependExtensionInter
                     ->setPublic(true)
                 ;
                 if ($isDefault) {
+                    // Need to set the class if the default definition already exists
                     $defaultMailPost->setClass(DebugMailPost::class);
                 }
             }
@@ -345,7 +347,7 @@ class EnMarcheMailerExtension extends Extension implements PrependExtensionInter
         }
     }
 
-    private function loadDoctrineConfig(ContainerBuilder $container, XmlFileLoader $loader): void
+    private function loadDoctrineConfig(XmlFileLoader $loader): void
     {
         if ($this->doctrineConfigured) {
             return;

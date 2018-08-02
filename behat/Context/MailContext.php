@@ -84,10 +84,10 @@ class MailContext extends RawMinkContext
 
     private function getMailPost(string $name = null): DebugMailPost
     {
-        $mailPost = $this->getContainer()->get($name ? "en_marche_mailer.mailPost.$name" : MailPostInterface::class);
+        $mailPost = $this->getContainer()->get($name ? "en_marche_mailer.mail_post.$name" : MailPostInterface::class);
 
         if (!$mailPost instanceof DebugMailPost) {
-            throw new \LogicException(\sprintf('Expected an instance of "%s", but got "%s". Are you running in test environment?', DebugMailPost::class, \get_class($mailPost)));
+            throw new \LogicException(\sprintf('Expected an instance of "%s", but got "%s". Are you running in test environment? Otherwise you need to explicitly load the bundle config file.', DebugMailPost::class, \get_class($mailPost)));
         }
 
         return $mailPost;

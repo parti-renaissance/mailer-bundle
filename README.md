@@ -2,15 +2,25 @@
 
 A Symfony bundle to share email related tools between En-Marche applications.
 
+The intention is too delegate sending emails to other applications or micro services, using external API like Mailjet.
+
+The bundle provides all the tools needed, and all the tests for it. So no need to worry too much about that at the
+application level.
+
+It eases the creation of instances to consume the traffic, while keeping an organized database for mail "requests" sent
+from applications to deliver through any API.
+The consequence is that many SAAS can be used in parallel, easing migration too.
+Mail requests  are "abstracted" of the application "sending" them and the API that will "consume" them.
+
 ## Requirements
 
  * PHP 7.1
  * Symfony 3.4 or 4.0 minimum
  * Composer
  
-### For producers (Applications posting mails)
+### For Mail Posts (Applications posting mails)
 
- * RabbitMQ is the only transporter type provided for now
+ * OldSoundRabbitMQBundle is required
  
  >Note: We can add support for an "http" transport type by creating a MailClientTransport for the mailer.
  An application could then send directly its message to the sass.
@@ -23,14 +33,16 @@ A Symfony bundle to share email related tools between En-Marche applications.
  We could also use a "database" transport type to use the MailRequestFactoryInterface directly in the transport to
  persist requests without queuing mails. Such transport would still need the mail requests producer to queue ids.
 
-### For consumers (Workers app transforming mails to mail requests)
+### For Aggregators (Workers app transforming mails to mail requests)
 
- * RabbitMQ is the only consumer type provided for now
+ * DoctrineBundle is required to persist mail requests
+ * OldSoundRabbitMQBundle is required to consume mails
 
-### For senders (Micro service send mail requests to SAAS)
+### For API Proxies (Micro service sending mail requests to external services)
 
- * RabbitMQ is the only consumer type provided for now
- * A Guzzle HTTP client is required
+ * CSAGuzzleBundle is required to send mail requests to SAAS
+ * DoctrineBundle is required to update mail requests
+ * OldSoundRabbitMQBundle is required to consume mail requests id
 
 ## Installation
 
@@ -38,10 +50,21 @@ A Symfony bundle to share email related tools between En-Marche applications.
 $ composer require en-marche/mailer-bundle
 ```
 
-## Mail Post (creating emails)
+## Mail Posts (creating mails)
 
-A Mail Post is an app responsible for creating new Mail classes to send message through a common mailer.
-To declare an app as such is done using the following configuration:
+ You can see the bundle as a mailing post office here for your app that will "address" your mail.
+ Putting it in the queue with a routing key, to go the central dispatch.
+ 
+ It consist of creating mail classes extending either `TransactionalMail` or `CampaignMail` (when there are many
+ recipients).
+ Then use a `MailPostInterface` (that can be let configured by default), to pass it the mail class, the
+ `RecipientInterface` instance(s), also the common vars and reply-to if any.
+ CC and BCC can be set by MailPostInterface thanks to the configuration of th bundle, see below.
+ The mail class name acts as a default template ID. i.e UserActivationMail will output "user_activation_em_dpt_api",
+ removing the suffix "Mail" and appending the `app_name` configured by the application.
+ The `Mail::getTemplateName` is also the only method that can be overridden to return any id.
+
+To declare an app as such, tou can use the following configuration:
 
 ### Configuration
 
@@ -53,8 +76,12 @@ en_marche_mailer:
         # the key will be used to set the OldSound connexion, refer to its bundle config
         url: '%env(EN_MARCHE_MAILER_AMQP_DSN)%'
         #lazy: true
+    # or simply
+    # amqp_connexion: { name: default }
+    # if one is already configured
+
     mail_post:
-        app_name: data_api
+        app_name: em_data_api
         transport:
             type: amqp # default
             chunk_size: 100 # overrides the default 50
@@ -123,8 +150,8 @@ The method signature is:
 public function address(string $mailClass, array $to, RecipientInterface $replyTo = null, array $templateVars = []): void;
 ```
 
-It requires a mail class and an array of RecipientInterface, then optionally a Recipient to reply to and an array of
-template vars.
+It requires a mail class and one instance or an array of `RecipientInterface` instances, then optionally another 
+RecipientInterface` as reply-to and an array of template vars.
 
 ```php
 // ...
@@ -222,9 +249,64 @@ public function action(Request $request, Event $event, MailPostInterface $adminM
 Of course, instead of static methods you can use whatever way you want to build the needed arguments.
 Consider using the above method, or implement some kind of MailVarsFactory if you really need a service.
 
+Also, it is a good idea to add some trait for specific users, like:
+
+```php
+<?php
+
+namespace App\Mail;
+
+use App\Entity\Adherent;
+use EnMarche\MailerBundle\Mail\Recipient;
+use EnMarche\MailerBundle\Mail\RecipientInterface;
+
+trait AdherentMailTrait
+{
+    public static function createRecipientFromUser(Adherent $adherent, array $templateVars = []): RecipientInterface
+    {
+        return new Recipient($adherent->getEmail(), $adherent->getFullName(), $templateVars);
+    }
+}
+```
+
+Then a mail above could be simplified as:
+
+```php
+<?php
+// ...
+
+class EventInvitationMail extends CampaignMail
+{
+    use AdherentMailTrait;
+
+    /**
+     * @param Adherent[]
+     *
+     * @return RecipientInterface[]
+     */
+    public static function createRecipientForInvitees(array $invitees): array
+    {
+        return \array_map(function (Adherent $invitee) {
+            return self::createRecipientFrom($invitee), [
+                'is_animator' => $invitee->isAnimator(),
+            ]);
+        }, $invitees);
+    }
+    
+    public static function createReplyToFor(?Adherent $adherent): ?RecipientInterface
+    {
+        return $adherent ? self::createRecipientFrom($adherent) : null;
+    }
+    
+    // ...
+```
+
 ## Mail Aggregator (processing mails, to persist requests in database)
 
-A consumer is an app responsible for processing pending emails.
+ The application needs the database to aggregate mails into mail requests persisted in a way to optimize fragments
+ of campaign without duplication of data (global template vars, addresses), ready to be scheduled.
+ 
+ Basically, it triggers the `MailConsumer`, that will do all the work.
 
 ### Configuration
 
@@ -253,8 +335,12 @@ en_marche_mailer:
 
 ## Mail API Proxy (actual scheduling of email requests)
 
-An API proxy is an app responsible for actually scheduling mails to an API. This is done via HTTP client by default.
-The sender is a kind of internal En-Marche proxy for the API (i.e Mailjet that can be changed easily).
+The app is responsible for running the `MailRequestConsumer`, that will actually make HTTP call using the
+`MailClientInterface`.
+Each `MailClient` can be configured to decorate a `GuzzleClient` using the right API, and uses a specific
+`PayloadFactoryInterface` that will transform that data of the `MailRequestInterface` to the required format to send to
+the service.
+The only SAAS support for now is Mailjet with the `MailjetPayloadFactory`.
 
 ### Configuration
 
@@ -262,7 +348,7 @@ The sender is a kind of internal En-Marche proxy for the API (i.e Mailjet that c
 # app/config/config.yml for Symfony 3.4
 # config/packages/en_marche_mailer.yaml for Symfony 4.x
 en_marche_mailer:
-    database_connexion: { url: '%env(EN_MARCHE_MAILER_DATABASE_URL)%' }
+    database_connexion: { name: default }
     amqp_connexion: { url: '%env(EN_MARCHE_MAILER_AMQP_DSN)%' }
     mail_api_proxy:
         http_clients:
@@ -277,3 +363,28 @@ en_marche_mailer:
             - 'em_mail_requests_*' # default
             # same patterns as above em_mail_requests_{type}_{app_name}
 ```
+
+## Tests
+
+The only tests that should be considered when using the bundle is using functional ones, to check whether or not an
+email was sent, how many, to who, eventually with what vars, when some logic is involved to compute them.
+First, the transporter can be tweaked for dev or test environment using:
+
+```yaml
+# config/packages/test/en_marche_mailer.yaml
+en_marche_mailer:
+    mail_post:
+        transporter: { type: 'null' } # must be a string
+```
+
+Also, when `kernel.debug` parameter is true the `DebugMailPost` class is used instead of the real one. It will still use
+the configured transport, but keep mail in memory by mail class. Providing many useful methods to perform assertions.
+Take a look at the Behat `MailContext` and the `MailTestCaseTrait`.
+
+## Side Note
+
+The configuration allows to let one perform all the tasks or wto of them, all scenarii are possible.
+Ideally each one should be independent, in practice all web applications are only using mail post config, and a micro
+service is used to do the "worker" part, configuring both the aggregator and the api proxy.
+But there is scalability at all level, especially when filtering routes by apps or mail request type (campaign or
+transactional).

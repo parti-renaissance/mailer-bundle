@@ -16,8 +16,8 @@ class MailClientsRegistry implements MailClientsRegistryInterface
     /**
      * {@inheritdoc}
      */
-    public function getClientForMailRequestType(string $mailType): MailClientInterface
+    public function getClientForMailRequest(MailRequestInterface $mailRequest): MailClientInterface
     {
-        return $this->clientsLocator->get($mailType);
+        return $this->clientsLocator->get($mailRequest->getType());
     }
 }
