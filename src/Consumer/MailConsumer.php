@@ -80,6 +80,7 @@ class MailConsumer implements ConsumerInterface
         }
 
         $this->producer->publish($request->getId(), $this->getRoutingKey($request));
+        $this->entityManager->detach($request);
 
         return ConsumerInterface::MSG_ACK;
     }

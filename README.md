@@ -119,6 +119,8 @@ However, they should not be used. Instead, you should rely on the following:
 The convention is to put mail classes under the `App\Mail` namespace, but you must suffix them by `Mail` and make them
 extend either `EnMarche\MailerBundle\Mail\TransactionalMail` or `EnMarche\MailerBundle\Mail\CampaignMail`:
 ```php
+<?php
+
 namespace App\Mail;
 
 // ... other use statements
@@ -154,6 +156,7 @@ It requires a mail class and one instance or an array of `RecipientInterface` in
 RecipientInterface` as reply-to and an array of template vars.
 
 ```php
+<?php
 // ...
 use App\Mail\AdherentResetPasswordMail;
 use EnMarche\MailerBundle\MailPost\MailPostInterface;
@@ -176,6 +179,8 @@ public function action(Request $request, Adherent $adherent, MailPostInterface $
 
 Example with a campaign message:
 ```php
+<?php
+
 namespace App\Mail;
 
 // ... other use statements
@@ -240,7 +245,7 @@ public function action(Request $request, Event $event, MailPostInterface $adminM
     $adminMailPost->address(
         EventInvitationMail::class,
         EventInvitationMail::createRecipientForInvitees($invitees),
-        EventInvitationMail::createReplyToFor($this->>getUser()),
+        EventInvitationMail::createReplyToFor($this->getUser()),
         EventInvitationMail::createTemplateVarsFor($event, $event->getHost())
     );
 }
@@ -300,6 +305,59 @@ class EventInvitationMail extends CampaignMail
     
     // ...
 ```
+
+### Lazy mails
+
+Sometimes there is so much recipients to set in the mail, even if we try to chunk, using that much memory tends to break
+the process. In those case use the `LazyMailPostInterface`, it's almost the same as the previous one.
+But instead of passing one or more recipients (that you often build from a factory method), just pass the DQL query
+string responsible for getting the recipients and the factory method name.
+A template will then be saved in database and processed later by batch, in front of the actual chunk processing.
+It means an email addressed to 100 000 recipients could be batched in lot of 500 recipients by mail that will be sent
+using their own chunk system defaulting to 50, giving in total 200 lots times 10 chunks, equivalent to 2000 chunks
+as they still share the same chunk id generated before batching.
+
+For every `MailPost` configured you can activate a `LazyMailPost` that will be created with the same `MailFactoryInterface`:
+
+ * `en_marche_mailer.lazy_mail_post.default` will use the same `en_marche_mailer.mail_factory.default` as the
+   `en_marche_mailer.mail_post.default` service
+ * `EnMarche\MailerBundle\MailPost\LazyMailPostInterface` is an alias for `en_marche_mailer.lazy_mail_post.default`
+ 
+```yaml
+# config/packages/en_marche_mailer.yaml
+en_marche_mailer:
+    mail_post:
+        app_name: en_marche
+        lazy: true
+        # ...
+```
+
+Then your mail can look just the same as classic campaign as above, but instead of "addressing" it, we want to "prepare"
+it. Here how the same event action as above looks like lazily:
+
+```php
+<?php
+
+// ...
+
+public function action(Request $request, Event $event, LazyMailPostInterface $lazyAdminMailPost)
+{
+    // ...
+    // suppose you get your invitees by using
+    $invitees = $eventRepository->findInvitessForEvent($event);
+    // which inside calls $this->...->getQuery()->getResult();
+    // add a new method your repo to return the query instead of the result, so you can do as follow
+    // that will call ->getQuery()->getDql() instead
+
+    $lazyAdminMailPost->prepare(
+        EventInvitationMail::class,
+        $eventRepository->getInvitessForEventQuery($event),
+        'EventInvitationMail::createRecipientForInvitee', // factory will be used with each result as argument
+        EventInvitationMail::createReplyToFor($this->getUser()),
+        EventInvitationMail::createTemplateVarsFor($event, $event->getHost())
+    );
+}
+``` 
 
 ## Mail Aggregator (processing mails, to persist requests in database)
 

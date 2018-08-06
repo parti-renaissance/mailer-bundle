@@ -6,6 +6,7 @@ use EnMarche\MailerBundle\Client\MailClient;
 use EnMarche\MailerBundle\Client\MailClientsRegistryInterface;
 use EnMarche\MailerBundle\Client\MailRequestFactoryInterface;
 use EnMarche\MailerBundle\Client\PayloadFactory\PayloadType;
+use EnMarche\MailerBundle\Consumer\LazyMailConsumer;
 use EnMarche\MailerBundle\Consumer\MailConsumer;
 use EnMarche\MailerBundle\Consumer\MailRequestConsumer;
 use EnMarche\MailerBundle\Entity\Address;
@@ -18,9 +19,12 @@ use EnMarche\MailerBundle\Mail\MailFactory;
 use EnMarche\MailerBundle\Mail\MailFactoryInterface;
 use EnMarche\MailerBundle\Mailer\MailerInterface;
 use EnMarche\MailerBundle\Mailer\Transporter\TransporterType;
+use EnMarche\MailerBundle\MailPost\LazyMailPost;
+use EnMarche\MailerBundle\MailPost\LazyMailPostInterface;
 use EnMarche\MailerBundle\Repository\AddressRepository;
 use EnMarche\MailerBundle\Repository\MailRequestRepository;
 use EnMarche\MailerBundle\Repository\MailVarsRepository;
+use EnMarche\MailerBundle\Test\DebugLazyMailPost;
 use EnMarche\MailerBundle\Test\DebugMailPost;
 use EnMarche\MailerBundle\MailPost\MailPost;
 use EnMarche\MailerBundle\MailPost\MailPostInterface;
@@ -68,6 +72,22 @@ class EnMarcheMailerExtension extends Extension implements PrependExtensionInter
             ];
             if (isset($config['mail_post']['transport']['type']) && TransporterType::AMQP === $config['mail_post']['transport']['type']) {
                 $amqpConfig['producers']['en_marche_mailer_mail'] = $this->createAMQPProducerConfiguration($amqpConnexion);
+
+                if ($this->isConfigEnabled($container, $config['mail_post']['lazy'])) {
+                    // we need a proper exchange because lazy mails must be consumed by the app sending them to be able
+                    // to run the DQL query and the factory defining recipients
+                    $lazyExchange = 'en_marche_mailer_lazy_'.$config['mail_post']['app_name'];
+                    $amqpConfig['producers']['en_marche_mailer_lazy_mail'] = $this->createAMQPProducerConfiguration(
+                        $amqpConnexion,
+                        $lazyExchange
+                    );
+                    $amqpConfig['consumers']['en_marche_mailer_lazy_mail'] = $this->createAMQPConsumerConfiguration(
+                        $amqpConnexion,
+                        LazyMailConsumer::class,
+                        [],
+                        $lazyExchange
+                    );
+                }
             }
             if (isset($config['mail_aggregator'])) {
                 $amqpConfig['producers']['en_marche_mailer_mail_request'] = $this->createAMQPProducerConfiguration($amqpConnexion);
@@ -182,19 +202,24 @@ class EnMarcheMailerExtension extends Extension implements PrependExtensionInter
         return true;
     }
 
-    private function createAMQPProducerConfiguration(string $connexion): array
+    private function createAMQPProducerConfiguration(string $connexion, string $exchange = 'en_marche_mailer'): array
     {
         return [
             'connection' => $connexion,
-            'exchange_options' => ['name' => 'en_marche_mailer', 'type' => 'direct'],
+            'exchange_options' => ['name' => $exchange, 'type' => 'direct'],
         ];
     }
 
-    private function createAMQPConsumerConfiguration(string $connexion, string $callback, array $routingKeys = []): array
+    private function createAMQPConsumerConfiguration(
+        string $connexion,
+        string $callback,
+        array $routingKeys = [],
+        string $exchange = 'en_marche_mailer'
+    ): array
     {
         return \array_merge($this->createAMQPProducerConfiguration($connexion), [
             'queue_options' => [
-                'name' => 'en_marche_mailer',
+                'name' => $exchange,
                 'durable' => false,
                 'routing_keys' => $routingKeys,
             ],
@@ -232,7 +257,7 @@ class EnMarcheMailerExtension extends Extension implements PrependExtensionInter
                 $container->setAlias('en_marche_mailer.mailer.transporter.default', $transporterId);
         }
 
-        $this->configureMailPost($container, $config['app_name'], $config['mail_posts'], $config['default_mail_post']);
+        $this->configureMailPosts($container, $config['app_name'], $config['mail_posts'], $config['default_mail_post'], $config['lazy']);
     }
 
     private function registerMailAggregatorConfiguration(array $config, ContainerBuilder $container, XmlFileLoader $loader)
@@ -299,13 +324,21 @@ class EnMarcheMailerExtension extends Extension implements PrependExtensionInter
         $this->injectLogger($mailRequestConsumer);
     }
 
-    private function configureMailPost(ContainerBuilder $container, string $appName, array $mailPosts, string $defaultPostName): void
+    private function configureMailPosts(
+        ContainerBuilder $container,
+        string $appName,
+        array $mailPosts,
+        string $defaultPostName,
+        array $lazyConfig
+    ): void
     {
         $defaultMailPost = $container->findDefinition(MailPostInterface::class);
         $defaultMailFactory = $container->findDefinition(MailFactoryInterface::class);
 
         // ensure a default key is set
-        foreach (\array_merge(['default' => []], $mailPosts) as $mailPostName => $mailPostConfig) {
+        $mailPosts = \array_merge(['default' => []], $mailPosts);
+
+        foreach ($mailPosts as $mailPostName => $mailPostConfig) {
             $isDefault = 'default' === $mailPostName;
             $mailFactory = $isDefault ? $defaultMailFactory : new Definition(MailFactory::class);
             $mailPost = $isDefault ? $defaultMailPost : new Definition($this->debug ? DebugMailPost::class : MailPost::class);
@@ -344,6 +377,31 @@ class EnMarcheMailerExtension extends Extension implements PrependExtensionInter
         if ('default' !== $defaultPostName) {
             $container->setAlias(MailPostInterface::class, new Alias("en_marche_mailer.mail_post.$defaultPostName", $this->debug));
             $container->setAlias(MailFactoryInterface::class, new Alias("en_marche_mailer.mail_factory.$defaultPostName", $this->debug));
+        }
+
+        if ($this->isConfigEnabled($container, $lazyConfig)) {
+            foreach (\array_keys($mailPosts) as $mailPost) {
+                $lazyMailPost = $container->register("en_marche_mailer.lazy_mail_post.$mailPost", $this->debug ? DebugLazyMailPost::class : LazyMailPost::class)
+                    ->addArgument(new Reference('old_sound_rabbit_mq.en_marche_mailer_lazy_mail_producer'))
+                    ->addArgument(new Reference("en_marche_mailer.mail_factory.$mailPost"))
+                    ->addArgument(new Reference('doctrine.orm.en_marche_mailer_entity_manager'))
+                    ->setPublic($this->debug)
+                ;
+                if ($this->debug) {
+                    $lazyMailPost->addArgument($mailPost);
+                }
+            }
+            $container->setAlias(LazyMailPostInterface::class, new Alias('en_marche_mailer.lazy_mail_post.'.$defaultPostName, $this->debug));
+
+            $lazyMailConsumer = $container->getDefinition(LazyMailConsumer::class)
+                ->setArgument(0, new Reference('doctrine.orm.en_marche_mailer_entity_manager'))
+                ->setArgument(1, new Reference(\sprintf('doctrine.orm.%s_entity_manager', $lazyConfig['entity_manager_name'])))
+                ->setArgument(2, new Reference(MailerInterface::class))
+                ->setArgument(3, $lazyConfig['batch_size'])
+            ;
+            $this->injectLogger($lazyMailConsumer);
+        } else {
+            $container->removeDefinition(LazyMailConsumer::class);
         }
     }
 

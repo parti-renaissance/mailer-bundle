@@ -49,7 +49,6 @@ class EnMarcheMailerExtensionTest extends TestCase
     {
         $this->extension->load([], $this->container);
 
-        // Producer should be off
         $this->assertContainerHasAlias(false, MailerInterface::class);
         $this->assertContainerHasAlias(false, TransporterInterface::class);
         $this->assertContainerHasAlias(false, MailFactoryInterface::class);
@@ -58,6 +57,7 @@ class EnMarcheMailerExtensionTest extends TestCase
         $this->assertContainerHasDefinition(false, 'en_marche_mailer.mailer.transporter.amqp');
         $this->assertContainerHasMailFactory(false, 'en_marche_mailer.mail_factory.default');
         $this->assertContainerHasMailPost(false, 'en_marche_mailer.mail_post.default');
+        $this->assertContainerHasDefinition(false, 'en_marche_mailer.lazy_mail_post.default');
     }
 
     /**

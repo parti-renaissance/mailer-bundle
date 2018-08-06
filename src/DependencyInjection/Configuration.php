@@ -3,6 +3,7 @@
 namespace EnMarche\MailerBundle\DependencyInjection;
 
 use EnMarche\MailerBundle\Client\PayloadFactory\PayloadType;
+use EnMarche\MailerBundle\Entity\LazyMail;
 use EnMarche\MailerBundle\Mail\Mail;
 use EnMarche\MailerBundle\Mailer\Transporter\TransporterType;
 use Symfony\Component\Config\Definition\Builder\ArrayNodeDefinition;
@@ -46,6 +47,14 @@ class Configuration implements ConfigurationInterface
                     return ($useAMQPTransporter || $useAMQPConsumer) && empty($config['amqp_connexion']);
                 })
                 ->thenInvalid('Current config needs AMQP connexion to transport mails.')
+            ->end()
+            ->validate()
+                ->ifTrue(function ($config) {
+                    $useDatabase = isset($config['mail_post']['lazy']) && $config['mail_post']['lazy']['enabled'];
+
+                    return $useDatabase && empty($config['database_connexion']);
+                })
+                ->thenInvalid('Current config needs a database connexion to send mails lazily.')
             ->end()
             ->validate()
                 ->ifTrue(function ($config) {
@@ -107,6 +116,13 @@ class Configuration implements ConfigurationInterface
                     ->canBeEnabled()
                     ->children()
                         ->scalarNode('app_name')->isRequired()->end()
+                        ->arrayNode('lazy')
+                            ->canBeEnabled()
+                            ->children()
+                                ->scalarNode('batch_size')->defaultValue(LazyMail::DEFAULT_BATCH_SIZE)->end()
+                                ->scalarNode('entity_manager_name')->defaultValue('default')->end()
+                            ->end()
+                        ->end()
                         ->arrayNode('transport')
                             ->addDefaultsIfNotSet()
                             ->children()

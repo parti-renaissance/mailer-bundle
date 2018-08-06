@@ -2,54 +2,64 @@
 
 namespace EnMarche\MailerBundle\Test;
 
+use Doctrine\ORM\EntityManagerInterface;
+use EnMarche\MailerBundle\Entity\LazyMail;
 use EnMarche\MailerBundle\Mail\MailFactory;
 use EnMarche\MailerBundle\Mail\MailFactoryInterface;
-use EnMarche\MailerBundle\Mail\MailInterface;
 use EnMarche\MailerBundle\Mail\RecipientInterface;
-use EnMarche\MailerBundle\Mailer\Mailer;
-use EnMarche\MailerBundle\Mailer\MailerInterface;
-use EnMarche\MailerBundle\MailPost\MailPostInterface;
+use EnMarche\MailerBundle\MailPost\LazyMailPostInterface;
+use OldSound\RabbitMqBundle\RabbitMq\ProducerInterface;
 
-class DebugMailPost implements MailPostInterface
+class DebugLazyMailPost implements LazyMailPostInterface
 {
     private $mails = [];
     private $lastSentMail;
     private $mailPostName;
-    private $mailer;
+    private $producer;
     private $mailFactory;
+    private $entityManager;
 
     public function __construct(
-        MailerInterface $mailer = null,
+        ProducerInterface $producer = null,
         MailFactoryInterface $mailFactory = null,
+        EntityManagerInterface $entityManager = null,
         string $mailPostName = 'default'
     )
     {
-        $this->mailPostName = $mailPostName;
-        $this->mailer = $mailer ?: new Mailer(new NullMailTransporter());
+        $this->producer = $producer;
         $this->mailFactory = $mailFactory ?: new MailFactory('test');
+        $this->entityManager = $entityManager;
+        $this->mailPostName = $mailPostName;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function address(
+    public function prepare(
         string $mailClass,
-        $to,
+        string $toQuery,
+        string $recipientFactory,
         RecipientInterface $replyTo = null,
         array $templateVars = [],
         $cc = [],
         $bcc = []
     ): void
     {
-        if ($to instanceof RecipientInterface) {
-            $to = [$to];
-        }
-
-        $mail = $this->mailFactory->createForClass($mailClass, $to, $replyTo, $templateVars);
+        $mail = new LazyMail(
+            $this->mailFactory->createForClass($mailClass, null, $replyTo, $templateVars),
+            $toQuery,
+            $recipientFactory
+        );
 
         $this->lastSentMail = $this->mails[$mailClass][] = $mail;
 
-        $this->mailer->send($mail);
+        if ($this->entityManager) {
+            $this->entityManager->persist($mail);
+            $this->entityManager->flush();
+        }
+        if ($this->producer) {
+            $this->producer->publish($mail->getId());
+        }
     }
 
     public function getMailPostName(): string
@@ -67,13 +77,13 @@ class DebugMailPost implements MailPostInterface
         return isset($this->mails[$mailClass]) ? \count($this->mails[$mailClass]) : 0;
     }
 
-    public function getLastSentMail(): ?MailInterface
+    public function getLastSentMail(): ?LazyMail
     {
         return $this->lastSentMail;
     }
 
     /**
-     * @return MailInterface[]
+     * @return LazyMail[]
      */
     public function getMails(): array
     {
@@ -81,7 +91,7 @@ class DebugMailPost implements MailPostInterface
     }
 
     /**
-     * @return MailInterface[]
+     * @return LazyMail[]
      */
     public function getMailsForClass(string $mailClass): array
     {

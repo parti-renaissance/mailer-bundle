@@ -85,6 +85,7 @@ class MailRequestConsumer implements ConsumerInterface
         }
 
         $this->entityManager->flush();
+        $this->entityManager->detach($mailRequest);
 
         return ConsumerInterface::MSG_ACK;
     }

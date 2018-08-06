@@ -13,7 +13,16 @@ interface MailPostInterface
     /**
      * @see MailFactoryInterface
      *
-     * @param RecipientInterface|RecipientInterface[] $to One or more recipients
+     * @param RecipientInterface|RecipientInterface[] $to  One or more recipients
+     * @param RecipientInterface|RecipientInterface[] $cc  One or more copy recipients
+     * @param RecipientInterface|RecipientInterface[] $bcc One or more invisible copy recipients
      */
-    public function address(string $mailClass, $to, RecipientInterface $replyTo = null, array $templateVars = []): void;
+    public function address(
+        string $mailClass,
+        $to,
+        RecipientInterface $replyTo = null,
+        array $templateVars = [],
+        $cc = [],
+        $bcc = []
+    ): void;
 }

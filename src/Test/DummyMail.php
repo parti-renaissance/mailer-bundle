@@ -28,6 +28,16 @@ class DummyMail implements MailInterface
     /**
      * {@inheritdoc}
      */
+    public function init(iterable $recipients, callable $recipientFactory = null): void
+    {
+        foreach ($recipients as $recipient) {
+            $this->toRecipients[] = $recipientFactory ? $recipientFactory($recipient) : $recipient;
+        }
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function getApp(): string
     {
         return $this->app;
@@ -39,6 +49,14 @@ class DummyMail implements MailInterface
     public function getToRecipients(): array
     {
         return $this->toRecipients;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function hasToRecipients(): bool
+    {
+        return (bool) $this->toRecipients;
     }
 
     /**

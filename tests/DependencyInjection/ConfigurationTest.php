@@ -157,6 +157,11 @@ class ConfigurationTest extends TestCase
         return [
             'mail_post' => [
                 'enabled' => true,
+                'lazy' => [
+                    'enabled' => false,
+                    'batch_size' => 300,
+                    'entity_manager_name' => 'default',
+                ],
                 'transport' => [
                     'type' => TransporterType::AMQP,
                     'chunk_size' => Mail::DEFAULT_CHUNK_SIZE,

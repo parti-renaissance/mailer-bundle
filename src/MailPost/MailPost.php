@@ -20,7 +20,14 @@ class MailPost implements MailPostInterface
     /**
      * {@inheritdoc}
      */
-    public function address(string $mailClass, $to, RecipientInterface $replyTo = null, array $templateVars = []): void
+    public function address(
+        string $mailClass,
+        $to,
+        RecipientInterface $replyTo = null,
+        array $templateVars = [],
+        $cc = [],
+        $bcc = []
+    ): void
     {
         $to = $to instanceof RecipientInterface ? [$to] : $to;
 
@@ -28,6 +35,9 @@ class MailPost implements MailPostInterface
             throw new \InvalidArgumentException(\sprintf('Expected an array, got "%s".', \is_object($to) ? \get_class($to) : \gettype($to)));
         }
 
-        $this->mailer->send($this->mailFactory->createForClass($mailClass, $to, $replyTo, $templateVars));
+        $cc = $cc instanceof RecipientInterface ? [$cc] : $cc;
+        $bcc = $bcc instanceof RecipientInterface ? [$bcc] : $bcc;
+
+        $this->mailer->send($this->mailFactory->createForClass($mailClass, $to, $replyTo, $templateVars, $cc, $bcc));
     }
 }

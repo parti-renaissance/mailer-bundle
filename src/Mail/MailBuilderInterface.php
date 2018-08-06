@@ -19,7 +19,7 @@ interface MailBuilderInterface extends MailInterface
     /**
      * @return RecipientInterface[] Previous recipients
      */
-    public function resetToRecipients(): array;
+    public function resetToRecipients(): ?array;
 
     public function addCcRecipient(RecipientInterface $recipient): self;
 

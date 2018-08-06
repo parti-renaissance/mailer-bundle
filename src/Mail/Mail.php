@@ -2,6 +2,7 @@
 
 namespace EnMarche\MailerBundle\Mail;
 
+use EnMarche\MailerBundle\Exception\InvalidMailException;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
 
@@ -29,30 +30,63 @@ class Mail implements MailInterface
     private $chunkId;
 
     /**
-     * @param RecipientInterface[]|iterable $toRecipients
-     * @param RecipientInterface|null       $replyTo
-     * @param RecipientInterface[]          $ccRecipients
-     * @param RecipientInterface[]          $bccRecipients
-     * @param string[]                      $templateVars
+     * @param RecipientInterface[]|null $toRecipients
+     * @param RecipientInterface|null   $replyTo
+     * @param RecipientInterface[]      $ccRecipients
+     * @param RecipientInterface[]      $bccRecipients
+     * @param string[]                  $templateVars
      */
     final protected function __construct(
         string $app,
-        iterable $toRecipients,
+        ?iterable $toRecipients,
         RecipientInterface $replyTo = null,
         array $ccRecipients = [],
         array $bccRecipients = [],
         array $templateVars = []
     ) {
         $this->app = $app;
-        $this->toRecipients = $toRecipients;
         $this->replyTo = $replyTo;
         $this->ccRecipients = $ccRecipients;
         $this->bccRecipients = $bccRecipients;
         $this->templateVars = MailUtils::validateTemplateVars($templateVars);
         $this->createdAt = new \DateTimeImmutable();
+
+        // Allow lazy loading recipients
+        if (null !== $toRecipients) {
+            $this->init($toRecipients);
+        }
     }
 
-    public function getApp(): string
+    /**
+     * {@inheritdoc}
+     */
+    final public function init(iterable $recipients, callable $recipientFactory = null): void
+    {
+        if (null !== $this->toRecipients) {
+            throw new \BadMethodCallException('Mail is already initialized.');
+        }
+
+        foreach ($recipients as $recipient) {
+            if (!$recipient instanceof RecipientInterface && !$recipientFactory) {
+                throw new \RuntimeException(\sprintf('The recipient must either implement "%s" or a factory must be passed as second argument of %s. Got "%s".', RecipientInterface::class, __METHOD__, \is_object($recipient) ? get_class($recipient) : gettype($recipient)));
+            }
+            if (!$recipient instanceof RecipientInterface) {
+                $recipient = $recipientFactory($recipient);
+                if (!$recipient instanceof RecipientInterface) {
+                    throw new \InvalidArgumentException(\sprintf('Expected an instance of "%s" but got "%s".', RecipientInterface::class, \is_object($recipient) ? get_class($recipient) : gettype($recipient)));
+                }
+            }
+            $to[$recipient->getEmail()] = $recipient;
+        }
+
+        if (empty($to)) {
+            throw new InvalidMailException('No recipients.');
+        }
+
+        $this->toRecipients = $to;
+    }
+
+    final public function getApp(): string
     {
         return $this->app;
     }
@@ -62,7 +96,15 @@ class Mail implements MailInterface
      */
     final public function getToRecipients(): array
     {
-        return $this->toRecipients;
+        return $this->toRecipients ?: [];
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    final public function hasToRecipients(): bool
+    {
+        return null !== $this->toRecipients;
     }
 
     /**
@@ -143,7 +185,7 @@ class Mail implements MailInterface
     /**
      * {@inheritdoc}
      */
-    public function getCreatedAt(): \DateTimeImmutable
+    final public function getCreatedAt(): \DateTimeImmutable
     {
         return $this->createdAt;
     }
@@ -179,7 +221,7 @@ class Mail implements MailInterface
      */
     final public function serialize(): string
     {
-        // Enforce serializing the Mail class instead of the children one to prevent unserializing an unknow class later
+        // Enforce serializing self instead of the children class to prevent unserializing an unknown class later
         $mail = new self(
             $this->app,
             $this->toRecipients,
@@ -193,6 +235,11 @@ class Mail implements MailInterface
         $mail->chunkId = $this->chunkId;
         $mail->createdAt = $this->createdAt;
 
+        if (!$this->toRecipients) {
+            // mail is a lazy template, let's sign it before batching
+            $mail->sign();
+        }
+
         return \serialize($mail);
     }
 
@@ -202,7 +249,7 @@ class Mail implements MailInterface
     private function createChunk(array $recipients): self
     {
         if (!$this->chunkId) {
-            $this->chunkId = Uuid::uuid4();
+            $this->sign();
             $this->getTemplateName(); // ensure the template name is resolved for perf
         }
 
@@ -210,6 +257,14 @@ class Mail implements MailInterface
         $chunk->toRecipients = $recipients;
 
         return $chunk;
+    }
+
+    /**
+     * Makes the mail unique before batching or chunking.
+     */
+    private function sign(): void
+    {
+        $this->chunkId = Uuid::uuid4();
     }
 
     private function __clone()

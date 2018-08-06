@@ -36,26 +36,29 @@ class MailFactory implements MailFactoryInterface
      */
     public function createForClass(
         string $mailClass,
-        array $to,
+        ?array $to,
         RecipientInterface $replyTo = null,
-        array $templateVars = []
+        array $templateVars = [],
+        array $ccRecipients = [],
+        array $bccRecipients = []
     ): MailInterface
     {
-        $builder = MailBuilder::create($mailClass, $this->app)
-            ->setToRecipients($to)
-        ;
+        $builder = MailBuilder::create($mailClass, $this->app);
 
+        if ($to) {
+            $builder->setToRecipients($to);
+        }
         if ($replyTo) {
             $builder->setReplyTo($replyTo);
         }
         if ($templateVars) {
             $builder->setTemplateVars($templateVars);
         }
-        if ($this->cc) {
-            $builder->setCcRecipients($this->cc);
+        if ($cc = $ccRecipients ?: $this->cc) {
+            $builder->setCcRecipients($cc);
         }
-        if ($this->bcc) {
-            $builder->setBccRecipients($this->bcc);
+        if ($bcc = $bccRecipients ?: $this->bcc) {
+            $builder->setBccRecipients($bcc);
         }
 
         return $builder->getMail();

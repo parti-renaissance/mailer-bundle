@@ -4,6 +4,7 @@ namespace EnMarche\MailerBundle\Tests\Mail;
 
 use EnMarche\MailerBundle\Mail\Mail;
 use EnMarche\MailerBundle\Mail\MailBuilder;
+use EnMarche\MailerBundle\Mail\Recipient;
 use EnMarche\MailerBundle\Mail\RecipientInterface;
 use PHPUnit\Framework\TestCase;
 
@@ -44,14 +45,5 @@ class MailBuilderTest extends TestCase
         ;
 
         $this->assertInstanceOf($mailClass, $builder->getMail());
-    }
-
-    /**
-     * @expectedException \EnMarche\MailerBundle\Exception\InvalidMailException
-     * @expectedExceptionMessage Mail must have at least one recipient.
-     */
-    public function testGetMailRequiresARecipient()
-    {
-        MailBuilder::create(TotoMail::class, 'test')->getMail();
     }
 }

@@ -2,16 +2,30 @@
 
 namespace EnMarche\MailerBundle\Mail;
 
+use EnMarche\MailerBundle\Exception\InvalidMailException;
 use Ramsey\Uuid\UuidInterface;
 
 interface MailInterface
 {
+    /**
+     * Allows to set recipients lazily.
+     *
+     * @throws \BadMethodCallException If already initialized
+     * @throws InvalidMailException    If there are no recipients
+     */
+    public function init(iterable $recipients, callable $recipientFactory = null): void;
+
     public function getApp(): string;
 
     /**
      * @return RecipientInterface[]
      */
     public function getToRecipients(): array;
+
+    /**
+     * @return bool Whether the mail is initialized
+     */
+    public function hasToRecipients(): bool;
 
     /**
      * @return RecipientInterface[]

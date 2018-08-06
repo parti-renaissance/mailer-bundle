@@ -3,6 +3,15 @@
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
            xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
     <services>
+        <!-- Consumer -->
+        <service id="EnMarche\MailerBundle\Consumer\LazyMailConsumer" public="false">
+            <!-- lazy mail manager will be set in the extension -->
+            <!-- recipient manager will be set in the extension -->
+            <!-- mailer will be set in the extension -->
+            <!-- batch size will be set in the extension -->
+            <!-- logger will be set in the extension -->
+        </service>
+
         <!-- Mailer -->
         <service id="en_marche_mailer.mailer.default" class="EnMarche\MailerBundle\Mailer\Mailer" public="false">
             <argument type="service" id="EnMarche\MailerBundle\Mailer\TransporterInterface" />

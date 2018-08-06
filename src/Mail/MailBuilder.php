@@ -8,7 +8,7 @@ use EnMarche\MailerBundle\Exception\InvalidMailException;
 class MailBuilder extends Mail implements MailBuilderInterface
 {
     private $mailClass;
-    private $toRecipients;
+    private $toRecipients = [];
     private $ccRecipients = [];
     private $bccRecipients = [];
     private $replyTo;
@@ -51,9 +51,9 @@ class MailBuilder extends Mail implements MailBuilderInterface
     /**
      * {@inheritdoc}
      */
-    public function resetToRecipients(): array
+    public function resetToRecipients(): ?array
     {
-        $recipients = $this->toRecipients;
+        $recipients = $this->toRecipients ?: null;
         $this->toRecipients = [];
 
         return $recipients;
@@ -172,10 +172,6 @@ class MailBuilder extends Mail implements MailBuilderInterface
      */
     public function getMail(): MailInterface
     {
-        if (!$this->toRecipients) {
-            throw new InvalidMailException('Mail must have at least one recipient.');
-        }
-
         return new $this->mailClass(
             $this->getApp(),
             $this->resetToRecipients(),
@@ -191,11 +187,11 @@ class MailBuilder extends Mail implements MailBuilderInterface
      */
     public static function create(string $mailClass, string $app): MailBuilderInterface
     {
-        if (!is_subclass_of($mailClass, Mail::class)) {
+        if (!\is_subclass_of($mailClass, Mail::class)) {
             throw new InvalidMailClassException($mailClass);
         }
 
-        $builder = new self($app, []);
+        $builder = new self($app, null);
         $builder->mailClass = $mailClass;
 
         return $builder;
