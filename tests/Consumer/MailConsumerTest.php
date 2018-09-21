@@ -67,7 +67,7 @@ class MailConsumerTest extends TestCase
         $this->mailConsumer = null;
     }
 
-    public function testExecute()
+    public function testExecute(): void
     {
         $this->expectsLog('warning', null);
         $this->expectsLog('error', null);
@@ -106,7 +106,7 @@ class MailConsumerTest extends TestCase
 
         $this->producer->expects($this->once())
             ->method('publish')
-            ->with($requestId, self::ROUTING_KEY.'_'.$mail->getType().'_'.$mail->getApp())
+            ->with($requestId, implode('.', [self::ROUTING_KEY, $mail->getType(), $mail->getApp()]))
         ;
 
         $this->assertSame(
@@ -115,7 +115,7 @@ class MailConsumerTest extends TestCase
         );
     }
 
-    public function testExecuteInvalidMail()
+    public function testExecuteInvalidMail(): void
     {
         $this->mailRequestFactory->expects($this->never())
             ->method('createRequestForMail')
@@ -147,7 +147,7 @@ class MailConsumerTest extends TestCase
         );
     }
 
-    public function testExecuteDuplicateMailRequest()
+    public function testExecuteDuplicateMailRequest(): void
     {
         $mail = new DummyMail();
         $exception = $this->createMock(UniqueConstraintViolationException::class);
@@ -181,7 +181,7 @@ class MailConsumerTest extends TestCase
         );
     }
 
-    public function testExecuteUnexpected()
+    public function testExecuteUnexpected(): void
     {
         $mail = new DummyMail();
         $exception = new \Exception('exception_message');

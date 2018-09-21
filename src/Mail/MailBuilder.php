@@ -5,6 +5,9 @@ namespace EnMarche\MailerBundle\Mail;
 use EnMarche\MailerBundle\Exception\InvalidMailClassException;
 use EnMarche\MailerBundle\Exception\InvalidMailException;
 
+/**
+ * MailBuilder extends Mail class to be able to call __construct protected method in MailBuilder::getMail() method
+ */
 class MailBuilder extends Mail implements MailBuilderInterface
 {
     private $mailClass;

@@ -3,7 +3,6 @@
 namespace EnMarche\MailerBundle\Client\PayloadFactory;
 
 use EnMarche\MailerBundle\Client\MailRequestInterface;
-use EnMarche\MailerBundle\Client\PayloadFactoryInterface;
 use EnMarche\MailerBundle\Entity\Address;
 use EnMarche\MailerBundle\Entity\RecipientVars;
 use EnMarche\MailerBundle\Exception\InvalidMailRequestException;
@@ -16,9 +15,9 @@ use Psr\Http\Message\ResponseInterface;
  * When no copy is needed, the field "Recipients" can be used passing a specific set of variables to each entry,
  * but globals vars must be merged in all of them.
  *
- * @link https://dev.mailjet.com/guides/?php#send-api-v3
+ * @see https://dev.mailjet.com/guides/?php#send-api-v3
  */
-class MailjetPayloadFactory implements PayloadFactoryInterface
+class MailjetPayloadFactory extends AbstractPayloadFactory
 {
     /**
      * {@inheritdoc}
@@ -32,6 +31,14 @@ class MailjetPayloadFactory implements PayloadFactoryInterface
 
         if ($replyTo = $mailRequest->getReplyTo()) {
             $payload['Headers']['Reply-To'] = $this->formatAddress($replyTo);
+        }
+
+        if ($this->getSenderEmail()) {
+            $payload['FromEmail'] = $this->getSenderEmail();
+        }
+
+        if ($this->getSenderName()) {
+            $payload['FromName'] = $this->getSenderName();
         }
 
         if ($mailRequest->getCampaign()) {
@@ -50,7 +57,7 @@ class MailjetPayloadFactory implements PayloadFactoryInterface
      */
     public function createResponsePayload(ResponseInterface $response): array
     {
-        return \GuzzleHttp\json_decode($response->getBody());
+        return \GuzzleHttp\json_decode($response->getBody(), true);
     }
 
     private function createTransactionalPayload(MailRequestInterface $mailRequest, array $payload): array
@@ -60,7 +67,7 @@ class MailjetPayloadFactory implements PayloadFactoryInterface
         if ($recipientsCount > 1) {
             throw new InvalidMailRequestException(\sprintf('The mail request (id: %d) has no campaign but more than one recipient.', $mailRequest->getId()));
         }
-        if ($recipientsCount === 0) {
+        if (0 === $recipientsCount) {
             throw new InvalidMailRequestException(\sprintf('The mail request (id: %d) has no recipient.', $mailRequest->getId()));
         }
 

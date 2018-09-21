@@ -7,7 +7,7 @@ use Doctrine\ORM\Mapping as ORM;
 /**
  * @ORM\Entity(repositoryClass="EnMarche\MailerBundle\Repository\AddressRepository")
  * @ORM\Table(
- *     name="addresses",
+ *     name="mailer_addresses",
  *     indexes={
  *         @ORM\Index(name="unique_address_idx", columns={"canonical_email", "name"})
  *     }

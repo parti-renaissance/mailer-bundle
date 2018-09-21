@@ -32,9 +32,9 @@ class MailjetPayloadFactoryTest extends TestCase
         $recipientVars = ['recipient_var' => 'test'];
         $replyToName = 'reply_to_name';
         $replyToEmail = 'reply_to_email';
-        $cc1Name = "cc_1_name";
-        $cc1Email = "cc_1_email";
-        $cc2Email = "cc_2_email";
+        $cc1Name = 'cc_1_name';
+        $cc1Email = 'cc_1_email';
+        $cc2Email = 'cc_2_email';
 
         $expectedRequestPayload = [
             'MJ-TemplateID' => 'dummy',
@@ -176,10 +176,8 @@ class MailjetPayloadFactoryTest extends TestCase
         array $bcc = [],
         Address $replyTo = null,
         array $templateVars = null
-    ): MailRequestInterface
-    {
-        return new class($to, $cc, $bcc, $replyTo, $templateVars) extends DummyMailRequest
-        {
+    ): MailRequestInterface {
+        return new class($to, $cc, $bcc, $replyTo, $templateVars) extends DummyMailRequest {
             public $id = 1;
             public $campaign;
 

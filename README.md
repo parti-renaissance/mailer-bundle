@@ -167,7 +167,7 @@ public function action(Request $request, Adherent $adherent, MailPostInterface $
         [
             AdherentResetPasswordMail::createRecipientFor(
                 $adherent,
-                $this->>urlGenerator->generate('app_adherent_reset_password', ['token' => $resetPasswordToken])
+                $this->urlGenerator->generate('app_adherent_reset_password', ['token' => $resetPasswordToken])
             ),
         ]
     ]);
@@ -240,7 +240,7 @@ public function action(Request $request, Event $event, MailPostInterface $adminM
     $adminMailPost->address(
         EventInvitationMail::class,
         EventInvitationMail::createRecipientForInvitees($invitees),
-        EventInvitationMail::createReplyToFor($this->>getUser()),
+        EventInvitationMail::createReplyToFor($this->getUser()),
         EventInvitationMail::createTemplateVarsFor($event, $event->getHost())
     );
 }
@@ -326,11 +326,11 @@ en_marche_mailer:
         # can use same old sound connexions settings and will be prepend
     mail_aggregator:
         routing_keys:
-            - 'em_mails_*' # default
+            - 'em_mails.*.*' # default
             # or
-            #- 'em_mails_campaign_*
-            #- 'em_mails_transactional_*
-            #- 'em_mails_transactional_app_name
+            #- 'em_mails.campaign.*'
+            #- 'em_mails.transactional.*'
+            #- 'em_mails.transactional.app_name'
 ```
 
 ## Mail API Proxy (actual scheduling of email requests)
@@ -356,13 +356,20 @@ en_marche_mailer:
                 api_type: 'mailjet' # default, the only provided for now
                 public_api_key: '' # required
                 private_api_key: '' # required
+                sender: # optional (used by PayloadFactory class)
+                    email: 'john.doe@example.test'
+                    name: 'John Doe'
                 options: [] # will be passed to the guzzle client config (creating auth from keys)
                 # will also preset Mailjet base uri and required header that can be overridden from here
         routing_keys:
             # same as the aggregator but this time to consume mail requests
-            - 'em_mail_requests_*' # default
-            # same patterns as above em_mail_requests_{type}_{app_name}
+            - 'em_mail_requests.*.*' # default
+            # same patterns as above em_mail_requests.{type}.{app_name}
 ```
+
+## Database 
+You can use `DoctrineMigration.php` as Doctrine migration script in your project for creating the set of bundle tables 
+used by MailRequest part.
 
 ## Tests
 

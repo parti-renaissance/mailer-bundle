@@ -11,7 +11,7 @@ use Ramsey\Uuid\UuidInterface;
 /**
  * @ORM\Entity(repositoryClass="EnMarche\MailerBundle\Repository\MailRequestRepository")
  * @ORM\Table(
- *     name="mail_requests",
+ *     name="mailer_mail_requests",
  *     indexes={
  *         @ORM\Index(name="chunk_campaign_idx", columns={"campaign"})
  *     }
@@ -142,22 +142,18 @@ class MailRequest implements MailRequestInterface
 
     /**
      * {@inheritdoc}
-     *
-     * @return Address[]|iterable
      */
-    public function getCcRecipients(): iterable
+    public function getCcRecipients(): array
     {
-        return $this->vars->getCcRecipients();
+        return $this->vars->getCcRecipients()->toArray();
     }
 
     /**
      * {@inheritdoc}
-     *
-     * @return Address[]|iterable
      */
-    public function getBccRecipients(): iterable
+    public function getBccRecipients(): array
     {
-        return $this->vars->getBccRecipients();
+        return $this->vars->getBccRecipients()->toArray();
     }
 
     /**

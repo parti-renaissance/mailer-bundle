@@ -103,7 +103,7 @@ class DummyMailRequest implements MailRequestInterface
     /**
      * {@inheritdoc}
      */
-    public function getCcRecipients(): iterable
+    public function getCcRecipients(): array
     {
         return $this->ccRecipients;
     }
@@ -111,7 +111,7 @@ class DummyMailRequest implements MailRequestInterface
     /**
      * {@inheritdoc}
      */
-    public function getBccRecipients(): iterable
+    public function getBccRecipients(): array
     {
         return $this->bccRecipients;
     }

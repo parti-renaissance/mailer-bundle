@@ -26,8 +26,7 @@ class MailRequestConsumer implements ConsumerInterface
         EntityManagerInterface $entityManager,
         MailClientsRegistryInterface $mailClientRegistry,
         LoggerInterface $logger
-    )
-    {
+    ) {
         $this->mailRequestRepository = $mailRequestRepository;
         $this->entityManager = $entityManager;
         $this->mailClientsRegistry = $mailClientRegistry;
