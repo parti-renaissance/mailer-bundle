@@ -159,10 +159,8 @@ class MailRequestFactoryTest extends TestCase
         array $replyTo = null,
         array $templateVars = [],
         array $cc = [], array $bcc = []
-    ): MailInterface
-    {
-        return new class($to, $recipientVars, $chunkId, $replyTo, $templateVars, $cc, $bcc) extends DummyMail
-        {
+    ): MailInterface {
+        return new class($to, $recipientVars, $chunkId, $replyTo, $templateVars, $cc, $bcc) extends DummyMail {
             public function __construct(array $to, array $recipientVars = [], ?UuidInterface $chunkId, array $replyTo = null, array $templateVars = [], array $cc = [], array $bcc = [])
             {
                 $this->chunkId = $chunkId;

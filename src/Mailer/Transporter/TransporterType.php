@@ -10,7 +10,7 @@ final class TransporterType
         self::AMQP,
     ];
 
-    public static function isValid(string $type)
+    public static function isValid(string $type): bool
     {
         return \in_array($type, self::ALL, true);
     }

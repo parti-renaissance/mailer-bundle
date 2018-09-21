@@ -25,7 +25,7 @@ class MailTest extends TestCase
     /**
      * @dataProvider provideTemplateNamesForMailClasses
      */
-    public function testGetTemplateName(string $mailClass, string $expectedTemplateName)
+    public function testGetTemplateName(string $mailClass, string $expectedTemplateName): void
     {
         $mail = $this->getMail($mailClass);
 
@@ -47,7 +47,7 @@ class MailTest extends TestCase
     /**
      * @dataProvider provideMailClasses
      */
-    public function testSerialize(string $mailClass)
+    public function testSerialize(string $mailClass): void
     {
         $mail = $this->getMail($mailClass);
 
@@ -58,7 +58,7 @@ class MailTest extends TestCase
         );
     }
 
-    public function provideRecipientsCountForChunkSize()
+    public function provideRecipientsCountForChunkSize(): iterable
     {
         yield 'Recipients count < chunk size => 1 chunk' => [10, 20, 1];
         yield 'Recipients count == chunk size => 1 chunk' => [10, 10, 1];
@@ -69,7 +69,7 @@ class MailTest extends TestCase
     /**
      * @dataProvider provideRecipientsCountForChunkSize
      */
-    public function testChunk(int $recipientsCount, int $chunkSize, int $expectedChunkCount)
+    public function testChunk(int $recipientsCount, int $chunkSize, int $expectedChunkCount): void
     {
         $mail = $this->getMail(FooMail::class, $this->getRecipients($recipientsCount));
 
@@ -78,7 +78,7 @@ class MailTest extends TestCase
         $chunkCount = 0;
 
         foreach ($mail->chunk($chunkSize) as $chunk) {
-            $chunkCount++;
+            ++$chunkCount;
 
             if ($expectedChunkCount < $chunkCount) {
                 $this->assertCount($chunkSize, $chunk->getToRecipients());
@@ -116,14 +116,8 @@ class MailTest extends TestCase
 
     private function getRecipients(int $count): array
     {
-        for ($i = 0; $i < $count; $i++) {
-            $recipient = $this->createMock(RecipientInterface::class);
-            $recipient->expects($this->any())
-                ->method('getEmail')
-                ->willReturn("email_$i")
-            ;
-
-            $recipients[] = $recipient;
+        for ($i = 0; $i < $count; ++$i) {
+            $recipients[] = $this->createConfiguredMock(RecipientInterface::class, ['getEmail' => "email_$i"]);
         }
 
         return $recipients ?? [];

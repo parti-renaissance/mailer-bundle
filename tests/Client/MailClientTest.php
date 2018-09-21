@@ -43,7 +43,7 @@ class MailClientTest extends TestCase
         $this->mailClient = null;
     }
 
-    public function testSend()
+    public function testSend(): void
     {
         $requestPayload = ['request_payload'];
         $mailRequest = $this->getMailRequest();
@@ -62,7 +62,7 @@ class MailClientTest extends TestCase
 
         $this->client->expects($this->once())
             ->method('request')
-            ->with('POST', '', ['body' => $requestPayload])
+            ->with('POST', '', ['body' => json_encode($requestPayload)])
             ->willReturn($response)
         ;
 
@@ -80,7 +80,7 @@ class MailClientTest extends TestCase
         $this->assertSame($responsePayload, $mailRequest->getResponsePayload());
     }
 
-    public function testResend()
+    public function testResend(): void
     {
         $requestPayload = ['request_payload'];
         $mailRequest = $this->getMailRequest($requestPayload);
@@ -97,7 +97,7 @@ class MailClientTest extends TestCase
 
         $this->client->expects($this->once())
             ->method('request')
-            ->with('POST', '', ['body' => $requestPayload])
+            ->with('POST', '', ['body' => json_encode($requestPayload)])
             ->willReturn($response)
         ;
 
@@ -120,7 +120,7 @@ class MailClientTest extends TestCase
      * @expectedExceptionMessage Invalid response (code: 500) for mail request (id: 1):
      *                           "error happens"
      */
-    public function testInvalidResponse()
+    public function testInvalidResponse(): void
     {
         $requestPayload = ['request_payload'];
         $mailRequest = $this->getMailRequest($requestPayload);
@@ -141,7 +141,7 @@ class MailClientTest extends TestCase
 
         $this->client->expects($this->once())
             ->method('request')
-            ->with('POST', '', ['body' => $requestPayload])
+            ->with('POST', '', ['body' => json_encode($requestPayload)])
             ->willReturn($response)
         ;
 
@@ -154,8 +154,7 @@ class MailClientTest extends TestCase
 
     private function getMailRequest(array $requestPayload = null): MailRequestInterface
     {
-        return new class($requestPayload) extends DummyMailRequest
-        {
+        return new class($requestPayload) extends DummyMailRequest {
             public $id = 1;
 
             public function __construct(array $requestPayload = null)

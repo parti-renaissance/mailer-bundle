@@ -3,13 +3,14 @@
 namespace EnMarche\MailerBundle\Repository;
 
 use Doctrine\ORM\EntityRepository;
+use Doctrine\ORM\NonUniqueResultException;
 use EnMarche\MailerBundle\Entity\Address;
 use EnMarche\MailerBundle\Mail\RecipientInterface;
 
 class AddressRepository extends EntityRepository
 {
     /**
-     * @throws \Doctrine\ORM\NonUniqueResultException
+     * @throws NonUniqueResultException
      */
     public function findOneForEmail(string $email): ?Address
     {
@@ -22,10 +23,10 @@ class AddressRepository extends EntityRepository
     }
 
     /**
-     * @throws \Doctrine\ORM\NonUniqueResultException
+     * @throws NonUniqueResultException
      */
     public function findOneForRecipient(RecipientInterface $recipient)
     {
-        return $this->findOneForEmail($recipient->getEmail(), $recipient->getName());
+        return $this->findOneForEmail($recipient->getEmail());
     }
 }

@@ -12,7 +12,7 @@ use Ramsey\Uuid\UuidInterface;
  *
  * @ORM\Entity(repositoryClass="EnMarche\MailerBundle\Repository\MailVarsRepository")
  * @ORM\Table(
- *     name="mail_vars",
+ *     name="mailer_mail_vars",
  *     indexes={
  *         @ORM\Index(name="app_idx", columns={"app"}),
  *         @ORM\Index(name="type_idx", columns={"type"}),
@@ -111,8 +111,7 @@ class MailVars
         array $bccRecipients = [],
         UuidInterface $campaign = null,
         \DateTimeImmutable $createdAt = null
-    )
-    {
+    ) {
         $this->app = $app;
         $this->type = $type;
         $this->replyTo = $replyTo;

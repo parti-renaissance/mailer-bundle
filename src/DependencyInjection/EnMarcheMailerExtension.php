@@ -73,6 +73,7 @@ class EnMarcheMailerExtension extends Extension implements PrependExtensionInter
                 $amqpConfig['producers']['en_marche_mailer_mail_request'] = $this->createAMQPProducerConfiguration($amqpConnexion);
                 $amqpConfig['consumers']['en_marche_mailer_mail'] = $this->createAMQPConsumerConfiguration(
                     $amqpConnexion,
+                    'en_marche_mailer_mails',
                     MailConsumer::class,
                     $config['mail_aggregator']['routing_keys']
                 );
@@ -80,6 +81,7 @@ class EnMarcheMailerExtension extends Extension implements PrependExtensionInter
             if (isset($config['mail_api_proxy'])) {
                 $amqpConfig['consumers']['en_marche_mailer_mail_request'] = $this->createAMQPConsumerConfiguration(
                     $amqpConnexion,
+                    'en_marche_mailer_mail_requests',
                     MailRequestConsumer::class,
                     $config['mail_api_proxy']['routing_keys']
                 );
@@ -186,15 +188,15 @@ class EnMarcheMailerExtension extends Extension implements PrependExtensionInter
     {
         return [
             'connection' => $connexion,
-            'exchange_options' => ['name' => 'en_marche_mailer', 'type' => 'direct'],
+            'exchange_options' => ['name' => 'en_marche_mailer', 'type' => 'topic'],
         ];
     }
 
-    private function createAMQPConsumerConfiguration(string $connexion, string $callback, array $routingKeys = []): array
+    private function createAMQPConsumerConfiguration(string $connexion, string $queueName, string $callback, array $routingKeys = []): array
     {
         return \array_merge($this->createAMQPProducerConfiguration($connexion), [
             'queue_options' => [
-                'name' => 'en_marche_mailer',
+                'name' => $queueName,
                 'durable' => false,
                 'routing_keys' => $routingKeys,
             ],
@@ -220,7 +222,7 @@ class EnMarcheMailerExtension extends Extension implements PrependExtensionInter
         switch ($config['transport']['type']) {
             case TransporterType::AMQP:
                 $transporter = $container->getDefinition($transporterId)
-                    ->setArgument(0, new Reference(('old_sound_rabbit_mq.en_marche_mailer_mail_producer')))
+                    ->setArgument(0, new Reference('old_sound_rabbit_mq.en_marche_mailer_mail_producer'))
                     ->setArgument(1, $config['transport']['chunk_size'])
                     ->setArgument(2, 'em_mails')
                 ;
@@ -277,6 +279,13 @@ class EnMarcheMailerExtension extends Extension implements PrependExtensionInter
                     $httpClientName
                 ));
             }
+
+            $container
+                ->findDefinition($payloadFactoryServiceId)
+                ->setArgument(0, $httpClientConfig['sender']['email'] ?? null)
+                ->setArgument(1, $httpClientConfig['sender']['name'] ?? null)
+            ;
+
             $mailClientId = \sprintf('en_marche_mailer.%s_mail_client', $httpClientName);
             $container->register($mailClientId, MailClient::class)
                 ->addArgument(new Reference("csa_guzzle.client.en_marche_mailer_$httpClientName"))
