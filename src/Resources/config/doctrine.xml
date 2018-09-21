@@ -1,0 +1,25 @@
+<?xml version="1.0" ?>
+<container xmlns="http://symfony.com/schema/dic/services"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+    <services>
+        <!-- Repository -->
+        <service id="en_marche_mailer.doctrine.repository.address" class="EnMarche\MailerBundle\Repository\AddressRepository" public="false">
+            <factory service="doctrine.orm.en_marche_mailer_entity_manager" method="getRepository" />
+            <argument>EnMarche\MailerBundle\Entity\Address</argument>
+        </service>
+        <service id="EnMarche\MailerBundle\Repository\AddressRepository" alias="en_marche_mailer.doctrine.repository.address" public="false" />
+
+        <service id="en_marche_mailer.doctrine.repository.mail_request" class="EnMarche\MailerBundle\Repository\MailRequestRepository" public="false">
+            <factory service="doctrine.orm.en_marche_mailer_entity_manager" method="getRepository" />
+            <argument>EnMarche\MailerBundle\Entity\MailRequest</argument>
+        </service>
+        <service id="EnMarche\MailerBundle\Repository\MailRequestRepository" alias="en_marche_mailer.doctrine.repository.mail_request" public="false" />
+
+        <service id="en_marche_mailer.doctrine.repository.mail_vars" class="EnMarche\MailerBundle\Repository\MailVarsRepository" public="false">
+            <factory service="doctrine.orm.en_marche_mailer_entity_manager" method="getRepository" />
+            <argument>EnMarche\MailerBundle\Entity\MailVars</argument>
+        </service>
+        <service id="EnMarche\MailerBundle\Repository\MailVarsRepository" alias="en_marche_mailer.doctrine.repository.mail_vars" public="false" />
+    </services>
+</container>

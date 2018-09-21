@@ -1,0 +1,22 @@
+<?xml version="1.0" ?>
+<container xmlns="http://symfony.com/schema/dic/services"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+    <services>
+        <!-- Client -->
+        <service id="en_marche_mailer.client.mail_request_factory.default" class="EnMarche\MailerBundle\Client\MailRequestFactory" public="false">
+            <!-- address repository will be set in the extension -->
+            <!-- mail vars repository will be set in the extension -->
+        </service>
+        <service id="EnMarche\MailerBundle\Client\MailRequestFactoryInterface" alias="en_marche_mailer.client.mail_request_factory.default" public="false" />
+
+        <!-- Consumer -->
+        <service id="EnMarche\MailerBundle\Consumer\MailConsumer" class="EnMarche\MailerBundle\Consumer\MailConsumer" public="true">
+            <!-- producer will be set by the extension -->
+            <!-- routing key prefix will be set in the extension -->
+            <!-- entity manager will be set in the extension -->
+            <!-- mail request factory -->
+            <!-- logger will be set in the extension -->
+        </service>
+    </services>
+</container>
