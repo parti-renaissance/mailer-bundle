@@ -2,6 +2,7 @@
 
 namespace EnMarche\MailerBundle\Test;
 
+use EnMarche\MailerBundle\Mail\RecipientInterface;
 use EnMarche\MailerBundle\MailPost\MailPostInterface;
 
 /**
@@ -29,12 +30,12 @@ trait MailTestCaseTrait
 
     public function assertMailCount(int $expectedCount, string $mailPostName = null): void
     {
-        $this->assertCount($expectedCount, $this->getMailPost($mailPostName)->getMailsCount());
+        self::assertCount($expectedCount, $this->getMailPost($mailPostName)->countMails());
     }
 
     public function assertMailCountForClass(int $expectedCount, string $mailClass, string $mailPostName = null): void
     {
-        $this->assertCount($expectedCount, $this->getMailPost($mailPostName)->getMailsCountForClass($mailClass));
+        self::assertSame($expectedCount, $this->getMailPost($mailPostName)->countMailsForClass($mailClass));
     }
 
     public function assertMailSentForRecipient(string $expectedEmail, string $mailClass = null, string $mailPostName = null): void
@@ -53,11 +54,11 @@ trait MailTestCaseTrait
             }
         }
 
-        $this->assertTrue($sent, \sprintf(
+        self::assertTrue($sent, \sprintf(
             'No mail%s was sent for "%s" among %d mail(s).',
             $mailClass ? " ($mailClass)" : '',
             $expectedEmail,
-            $mailClass ? $mailPost->getMailsCountForClass($mailClass) : $mailPost->getMailsCount()
+            $mailClass ? $mailPost->countMailsForClass($mailClass) : $mailPost->countMails()
         ));
     }
 
@@ -84,11 +85,18 @@ trait MailTestCaseTrait
         }
         $expectedEmails = \array_filter($expectedEmails);
 
-        $this->assertCount(0, \sprintf(
+        self::assertCount(0, \sprintf(
             'No mail%s was sent for "%s" among %d mail(s).',
             $mailClass ? " ($mailClass)" : '',
             \implode('", "', $expectedEmails),
-            $mailClass ? $mailPost->getMailsCountForClass($mailClass) : $mailPost->getMailsCount()
+            $mailClass ? $mailPost->countMailsForClass($mailClass) : $mailPost->countMails()
         ));
+    }
+
+    public static function assertMessageRecipient(string $expectedEmail, string $expectedName, array $expectedVars, RecipientInterface $recipient): void
+    {
+        self::assertSame($expectedEmail, $recipient->getEmail());
+        self::assertSame($expectedName, $recipient->getName());
+        self::assertSame($expectedVars, $recipient->getTemplateVars());
     }
 }
