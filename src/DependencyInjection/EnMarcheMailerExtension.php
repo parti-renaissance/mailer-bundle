@@ -149,12 +149,13 @@ class EnMarcheMailerExtension extends Extension implements PrependExtensionInter
     {
         $config = $this->getProcessedConfig($container, $configs);
         $loader = new XmlFileLoader($container, new FileLocator(__DIR__.'/../Resources/config'));
+        $this->debug = $container->getParameter('kernel.debug');
 
-        if ($this->debug = $container->getParameter('kernel.debug')) {
-            $loader->load('mail_post_test.xml');
-        }
         if (isset($config['mail_post'])) {
             $this->registerMailPostConfiguration($config['mail_post'], $container, $loader);
+        }
+        if ($this->debug) {
+            $loader->load('mail_post_test.xml');
         }
         if (isset($config['mail_aggregator'])) {
             $this->registerMailAggregatorConfiguration($config['mail_aggregator'], $container, $loader);

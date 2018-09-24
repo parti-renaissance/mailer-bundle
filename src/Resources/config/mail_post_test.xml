@@ -5,5 +5,7 @@
     <services>
         <!-- Allow enabling "null" transport type in "config/packages/test/en_marche_mailer.yaml" -->
         <service id="en_marche_mailer.mailer.transporter.null" class="EnMarche\MailerBundle\Test\NullMailTransporter" public="false" />
+
+        <service id="EnMarche\MailerBundle\MailPost\MailPostInterface" alias="en_marche_mailer.mail_post.default" public="true" />
     </services>
 </container>

@@ -2,8 +2,10 @@
 
 namespace EnMarche\MailerBundle\Behat\Context;
 
+use Behat\Gherkin\Node\TableNode;
 use Behat\MinkExtension\Context\RawMinkContext;
 use Behat\Symfony2Extension\Context\KernelDictionary;
+use Coduo\PHPMatcher\Factory\SimpleFactory;
 use EnMarche\MailerBundle\Mail\MailInterface;
 use EnMarche\MailerBundle\Test\DebugMailPost;
 use EnMarche\MailerBundle\MailPost\MailPostInterface;
@@ -12,13 +14,16 @@ class MailContext extends RawMinkContext
 {
     use KernelDictionary;
 
+    /** @var DebugMailPost */
+    private $mailPost;
+
     /**
      * @Given I should have :number email(s)( for class :mailClass)?( sent with :mailPostName)?
      */
-    public function iShouldHaveMessages(int $number, string $mailClass = null, string $mailPostName = null)
+    public function iShouldHaveMessages(int $number, string $mailClass = null, string $mailPostName = null): void
     {
         $mailPost = $this->getMailPost($mailPostName);
-        $count = $mailClass ? $mailPost->getMailsCount() : $mailPost->getMailsCountForClass($mailClass);
+        $count = $mailClass ? $mailPost->countMails() : $mailPost->countMailsForClass($mailClass);
 
         if ($number !== $count) {
             throw new \RuntimeException(sprintf('Found %d email(s) instead of %d.', $count, $number));
@@ -26,16 +31,18 @@ class MailContext extends RawMinkContext
     }
 
     /**
-     * @Given I should have 1 email :mailClass( sent with :mailPostName) for :recipient with vars:
+     * @Given I should have 1 email :mailClass for :recipient with vars:
      */
-    public function iShouldHaveEmailForWithPayload(string $maiClass, string $recipient, array $vars, string $mailPostName = null)
+    public function iShouldHaveEmailForWithPayload(string $maiClass, string $recipient, TableNode $vars, string $mailPostName = null): void
     {
-        $mail = null;
         $mailPost = $this->getMailPost($mailPostName);
 
-        if (1 !== $mailPost->getMailsCountForClass($maiClass)) {
-            throw new \RuntimeException(sprintf('I found %s email(s) instead of 1', $mailPost->getMailsCount($maiClass)));
+        if (1 !== $count = $mailPost->countMailsForClass($maiClass)) {
+            throw new \RuntimeException(sprintf('I found %s email(s) instead of 1', $count));
         }
+
+        $simpleFactory = new SimpleFactory();
+        $matcher = $simpleFactory->createMatcher();
 
         foreach ($mailPost->getMailsForClass($maiClass) as $mail) {
             if (1 !== \count($recipients = $mail->getToRecipients())) {
@@ -44,20 +51,18 @@ class MailContext extends RawMinkContext
             if ($recipient !== $email = $recipients[0]->getEmail()) {
                 throw new \RuntimeException(\sprintf('Expected recipient "%s", but got "%s".', $recipient, $email));
             }
-            if ($vars !== $actual = \array_merge($mail->getTemplateVars(), $recipients[0]->getTemplateVars())) {
+            if (!$matcher->match($actual = \array_merge($mail->getTemplateVars(), $recipients[0]->getTemplateVars()), $vars->getRowsHash())) {
                 throw new \RuntimeException(\sprintf('Failed expecting vars, got "%s".', \var_export($actual, true)));
             }
         }
     }
 
     /**
-     * @When I click on the email link :templateVars (sent with :mailPostName)?
+     * @When I click on the link :templateVars of the last email
      */
-    public function iClickOnTheEmailLink($templateVars, $mailPostName = null)
+    public function iClickOnTheEmailLink($templateVars, $mailPostName = null): void
     {
-        $mailPost = $this->getMailPost($mailPostName);
-
-        $lastMail = $mailPost->getLastSentMail();
+        $lastMail = $this->getMailPost($mailPostName)->getLastSentMail();
 
         if (!$lastMail instanceof MailInterface) {
             throw new \RuntimeException(\sprintf('No email was previously sent with mail post "%s".', $mailPostName));
@@ -82,14 +87,27 @@ class MailContext extends RawMinkContext
         $this->visitPath($link);
     }
 
+    /**
+     * @AfterScenario
+     */
+    public function clearMails(): void
+    {
+        if ($this->mailPost) {
+            $this->mailPost->clearMails();
+        }
+    }
+
     private function getMailPost(string $name = null): DebugMailPost
     {
-        $mailPost = $this->getContainer()->get($name ? "en_marche_mailer.mail_post.$name" : MailPostInterface::class);
+        if (!$this->mailPost) {
+            $mailPost = $this->getContainer()->get($name ? "en_marche_mailer.mail_post.$name" : MailPostInterface::class);
 
-        if (!$mailPost instanceof DebugMailPost) {
-            throw new \LogicException(\sprintf('Expected an instance of "%s", but got "%s". Are you running in test environment? Otherwise you need to explicitly load the bundle config file.', DebugMailPost::class, \get_class($mailPost)));
+            if (!$mailPost instanceof DebugMailPost) {
+                throw new \LogicException(\sprintf('Expected an instance of "%s", but got "%s". Are you running in test environment? Otherwise you need to explicitly load the bundle config file.', DebugMailPost::class, \get_class($mailPost)));
+            }
+            $this->mailPost = $mailPost;
         }
 
-        return $mailPost;
+        return $this->mailPost;
     }
 }

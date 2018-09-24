@@ -22,7 +22,7 @@ class MailBuilder extends Mail implements MailBuilderInterface
      */
     public function addToRecipient(RecipientInterface $recipient): MailBuilderInterface
     {
-        $this->toRecipients[$recipient->getEmail()] = $recipient;
+        $this->toRecipients[] = $recipient;
 
         return $this;
     }
@@ -30,9 +30,11 @@ class MailBuilder extends Mail implements MailBuilderInterface
     /**
      * {@inheritdoc}
      */
-    public function removeToRecipient(RecipientInterface $recipient): MailBuilderInterface
+    public function removeToRecipient(RecipientInterface $recipientToRemove): MailBuilderInterface
     {
-        unset($this->toRecipients[$recipient->getEmail()]);
+        $this->toRecipients = array_filter($this->toRecipients, function (Recipient $recipient) use ($recipientToRemove) {
+            return $recipient->getEmail() !== $recipientToRemove->getEmail();
+        });
 
         return $this;
     }

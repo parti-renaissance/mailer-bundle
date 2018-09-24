@@ -12,8 +12,8 @@ use EnMarche\MailerBundle\MailPost\MailPostInterface;
 
 class DebugMailPost implements MailPostInterface
 {
-    private $mails = [];
-    private $lastSentMail;
+    private static $mails = [];
+    private static $lastSentMail;
     private $mailPostName;
     private $mailer;
     private $mailFactory;
@@ -39,7 +39,7 @@ class DebugMailPost implements MailPostInterface
 
         $mail = $this->mailFactory->createForClass($mailClass, $to, $replyTo, $templateVars);
 
-        $this->lastSentMail = $this->mails[$mailClass][] = $mail;
+        self::$mails[$mailClass][] = self::$lastSentMail = $mail;
 
         $this->mailer->send($mail);
     }
@@ -49,19 +49,19 @@ class DebugMailPost implements MailPostInterface
         return $this->mailPostName;
     }
 
-    public function getMailsCount(): int
+    public function countMails(): int
     {
-        return \count(\array_merge(...$this->mails));
+        return \count(\array_merge(...self::$mails));
     }
 
-    public function getMailsCountForClass(string $mailClass): int
+    public function countMailsForClass(string $mailClass): int
     {
-        return isset($this->mails[$mailClass]) ? \count($this->mails[$mailClass]) : 0;
+        return isset(self::$mails[$mailClass]) ? \count(self::$mails[$mailClass]) : 0;
     }
 
     public function getLastSentMail(): ?MailInterface
     {
-        return $this->lastSentMail;
+        return self::$lastSentMail;
     }
 
     /**
@@ -69,7 +69,7 @@ class DebugMailPost implements MailPostInterface
      */
     public function getMails(): array
     {
-        return $this->mails;
+        return self::$mails;
     }
 
     /**
@@ -77,6 +77,12 @@ class DebugMailPost implements MailPostInterface
      */
     public function getMailsForClass(string $mailClass): array
     {
-        return $this->mails[$mailClass] ?? [];
+        return self::$mails[$mailClass] ?? [];
+    }
+
+    public function clearMails(): void
+    {
+        self::$mails = [];
+        self::$lastSentMail = null;
     }
 }
