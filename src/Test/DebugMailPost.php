@@ -9,7 +9,6 @@ use EnMarche\MailerBundle\Mail\RecipientInterface;
 use EnMarche\MailerBundle\Mailer\Mailer;
 use EnMarche\MailerBundle\Mailer\MailerInterface;
 use EnMarche\MailerBundle\MailPost\MailPostInterface;
-use EnMarche\MailerBundle\Test\NullMailTransporter;
 
 class DebugMailPost implements MailPostInterface
 {
@@ -23,8 +22,7 @@ class DebugMailPost implements MailPostInterface
         MailerInterface $mailer = null,
         MailFactoryInterface $mailFactory = null,
         string $mailPostName = 'default'
-    )
-    {
+    ) {
         $this->mailPostName = $mailPostName;
         $this->mailer = $mailer ?: new Mailer(new NullMailTransporter());
         $this->mailFactory = $mailFactory ?: new MailFactory('test');
@@ -51,12 +49,12 @@ class DebugMailPost implements MailPostInterface
         return $this->mailPostName;
     }
 
-    public function getMailsCount(): int
+    public function countMails(): int
     {
         return \count(\array_merge(...$this->mails));
     }
 
-    public function getMailsCountForClass(string $mailClass): int
+    public function countMailsForClass(string $mailClass): int
     {
         return isset($this->mails[$mailClass]) ? \count($this->mails[$mailClass]) : 0;
     }

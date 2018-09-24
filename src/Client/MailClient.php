@@ -31,8 +31,8 @@ class MailClient implements MailClientInterface
             $mailRequest->prepare($requestPayload);
         }
 
-        $response = $this->client->request(Request::METHOD_POST, '' , [
-            'body' => $requestPayload,
+        $response = $this->client->request(Request::METHOD_POST, '', [
+            'body' => json_encode($requestPayload),
         ]);
 
         if ($response->getStatusCode() >= 300) {

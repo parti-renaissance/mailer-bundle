@@ -6,7 +6,7 @@ use Doctrine\ORM\Mapping as ORM;
 
 /**
  * @ORM\Entity
- * @ORM\Table(name="recipient_vars")
+ * @ORM\Table(name="mailer_recipient_vars")
  */
 class RecipientVars
 {

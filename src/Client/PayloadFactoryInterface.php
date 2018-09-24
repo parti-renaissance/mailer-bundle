@@ -8,6 +8,10 @@ use Psr\Http\Message\ResponseInterface;
 
 interface PayloadFactoryInterface
 {
+    public function getSenderEmail(): ?string;
+
+    public function getSenderName(): ?string;
+
     /**
      * @throws InvalidMailRequestException
      */

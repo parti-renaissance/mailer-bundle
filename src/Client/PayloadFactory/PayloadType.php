@@ -12,7 +12,7 @@ final class PayloadType
 
     public const API_SETTINGS_MAP = [
         self::MAILJET => [
-            'base_uri' => 'https://api.mailjet.com/v3/',
+            'base_uri' => 'https://api.mailjet.com/v3/send',
             'headers' => ['Content-Type' => 'application/json'],
         ],
     ];

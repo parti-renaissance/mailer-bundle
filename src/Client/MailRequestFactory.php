@@ -50,7 +50,8 @@ class MailRequestFactory implements MailRequestFactoryInterface
             $replyTo ? $this->createAddressFromRecipient($replyTo) : null,
             $mail->getTemplateVars(),
             $this->createAddressesFromRecipients($mail->getCcRecipients()),
-            $this->createAddressesFromRecipients($mail->getBccRecipients())
+            $this->createAddressesFromRecipients($mail->getBccRecipients()),
+            $chunkId
         );
     }
 

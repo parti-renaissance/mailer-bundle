@@ -32,8 +32,7 @@ class MailConsumer implements ConsumerInterface
         EntityManagerInterface $entityManager,
         MailRequestFactoryInterface $mailRequestFactory,
         LoggerInterface $logger = null
-    )
-    {
+    ) {
         $this->producer = $producer;
         $this->routingKeyPrefix = $routingKeyPrefix;
         $this->entityManager = $entityManager;
@@ -86,6 +85,10 @@ class MailConsumer implements ConsumerInterface
 
     private function getRoutingKey(MailRequestInterface $mailRequest): string
     {
-        return \sprintf('%s_%s_%s', $this->routingKeyPrefix, $mailRequest->getType(), $mailRequest->getApp());
+        return implode('.', [
+            $this->routingKeyPrefix,
+            $mailRequest->getType(),
+            $mailRequest->getApp(),
+        ]);
     }
 }

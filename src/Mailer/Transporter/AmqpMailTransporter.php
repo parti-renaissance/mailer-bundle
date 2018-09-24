@@ -52,7 +52,11 @@ class AmqpMailTransporter implements TransporterInterface
 
     private function getRoutingKey(MailInterface $mail): string
     {
-        return $this->routingKeyPrefix.'_'.$mail->getType().'_'.$mail->getApp();
+        return implode('.', [
+            $this->routingKeyPrefix,
+            $mail->getType(),
+            $mail->getApp(),
+        ]);
     }
 
     private function log(string $template, string $routingKey, array $to, string $chunkId = null): void

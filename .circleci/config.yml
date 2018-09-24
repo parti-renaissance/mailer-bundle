@@ -1,0 +1,15 @@
+version: 2
+
+jobs:
+    build:
+        docker:
+            - image: circleci/php:7.1
+        steps:
+            - checkout
+            - restore_cache:
+                key: composer-{{ checksum "composer.json" }}
+            - run: composer install --ignore-platform-reqs --prefer-dist --no-progress --no-suggest --no-interaction
+            - save_cache:
+                paths: ./vendor
+                key: composer-{{ checksum "composer.json" }}
+            - run: ./vendor/bin/phpunit --log-junit ~/phpunit/junit.xml
