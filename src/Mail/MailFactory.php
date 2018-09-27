@@ -38,7 +38,9 @@ class MailFactory implements MailFactoryInterface
         string $mailClass,
         array $to,
         RecipientInterface $replyTo = null,
-        array $templateVars = []
+        array $templateVars = [],
+        string $subject = null,
+        SenderInterface $sender = null
     ): MailInterface {
         $builder = MailBuilder::create($mailClass, $this->app)
             ->setToRecipients($to)
@@ -50,11 +52,17 @@ class MailFactory implements MailFactoryInterface
         if ($templateVars) {
             $builder->setTemplateVars($templateVars);
         }
+        if ($subject) {
+            $builder->setSubject($subject);
+        }
         if ($this->cc) {
             $builder->setCcRecipients($this->cc);
         }
         if ($this->bcc) {
             $builder->setBccRecipients($this->bcc);
+        }
+        if ($sender) {
+            $builder->setSender($sender);
         }
 
         return $builder->getMail();

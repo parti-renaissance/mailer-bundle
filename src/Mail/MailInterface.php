@@ -30,6 +30,10 @@ interface MailInterface
 
     public function getReplyTo(): ?RecipientInterface;
 
+    public function getSender(): ?SenderInterface;
+
+    public function getSubject(): ?string;
+
     /**
      * The common vars for campaign emails
      *

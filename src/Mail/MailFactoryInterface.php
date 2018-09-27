@@ -18,6 +18,8 @@ interface MailFactoryInterface
         string $mailClass,
         array $to,
         RecipientInterface $replyTo = null,
-        array $templateVars = []
+        array $templateVars = [],
+        string $subject = null,
+        SenderInterface $sender = null
     ): MailInterface;
 }

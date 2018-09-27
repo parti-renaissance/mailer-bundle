@@ -33,12 +33,16 @@ class MailjetPayloadFactory extends AbstractPayloadFactory
             $payload['Headers']['Reply-To'] = $this->formatAddress($replyTo);
         }
 
-        if ($this->getSenderEmail()) {
-            $payload['FromEmail'] = $this->getSenderEmail();
+        if ($subject = $mailRequest->getSubject()) {
+            $payload['Subject'] = $subject;
         }
 
-        if ($this->getSenderName()) {
-            $payload['FromName'] = $this->getSenderName();
+        if ($senderEmail = $this->getSenderEmail($mailRequest)) {
+            $payload['FromEmail'] = $senderEmail;
+        }
+
+        if ($senderName = $this->getSenderName($mailRequest)) {
+            $payload['FromName'] = $senderName;
         }
 
         if ($mailRequest->getCampaign()) {
@@ -88,16 +92,18 @@ class MailjetPayloadFactory extends AbstractPayloadFactory
 
     private function createCampaignPayload(MailRequestInterface $mailRequest, array $payload): array
     {
-        $templateVars = $mailRequest->getTemplateVars();
+        if ($templateVars = $mailRequest->getTemplateVars()) {
+            $payload['Vars'] = $templateVars;
+        }
 
         foreach ($mailRequest->getRecipientVars() as $recipient) {
-            $payload['Recipients'][] = $this->createRecipient($recipient, $templateVars);
+            $payload['Recipients'][] = $this->createRecipient($recipient);
         }
 
         return $payload;
     }
 
-    private function createRecipient(RecipientVars $recipientVars, array $templateVars): array
+    private function createRecipient(RecipientVars $recipientVars): array
     {
         $address = $recipientVars->getAddress();
 
@@ -109,7 +115,7 @@ class MailjetPayloadFactory extends AbstractPayloadFactory
             $recipient['Name'] = $name;
         }
 
-        if ($vars = \array_merge($templateVars, $recipientVars->getTemplateVars())) {
+        if ($vars = $recipientVars->getTemplateVars()) {
             $recipient['Vars'] = $vars;
         }
 

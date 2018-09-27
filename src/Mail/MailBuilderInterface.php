@@ -45,6 +45,8 @@ interface MailBuilderInterface extends MailInterface
 
     public function removeTemplateVar(string $name): self;
 
+    public function setSender(SenderInterface $sender): self;
+
     /**
      * @param string[] $templateVars
      */
@@ -62,4 +64,6 @@ interface MailBuilderInterface extends MailInterface
      * @throws InvalidMailClassException
      */
     public static function create(string $mailClass, string $app): self;
+
+    public function setSubject(string $subject): self;
 }

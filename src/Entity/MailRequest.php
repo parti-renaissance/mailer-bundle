@@ -175,6 +175,22 @@ class MailRequest implements MailRequestInterface
     /**
      * {@inheritdoc}
      */
+    public function getSenderName(): ?string
+    {
+        return $this->vars->getSenderName();
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getSenderEmail(): ?string
+    {
+        return $this->vars->getSenderEmail();
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function getTemplateName(): string
     {
         return $this->vars->getTemplateName();
@@ -188,9 +204,20 @@ class MailRequest implements MailRequestInterface
         return $this->vars->getTemplateVars();
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function getCreatedAt(): \DateTimeImmutable
     {
         return $this->vars->getCreatedAt();
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getSubject(): ?string
+    {
+        return $this->vars->getSubject();
     }
 
     /**

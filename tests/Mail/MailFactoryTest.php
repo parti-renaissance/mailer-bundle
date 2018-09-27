@@ -29,28 +29,25 @@ class MailFactoryTest extends TestCase
     {
         yield [
             TotoMail::class,
-            [
-                'email' => $this->getRecipient('email'),
-            ],
+            [$this->getRecipient('email')],
             null, // no reply to
             [], // no template vars
         ];
         yield [
             HeahMail::class,
-            [
-                'email' => $this->getRecipient('email'),
-            ],
+            [$this->getRecipient('email')],
             $this->getRecipient('reply_to_email'),
             ['var' => 'test'],
+            'Beautiful email subject',
         ];
     }
 
     /**
      * @dataProvider provideMailData
      */
-    public function testCreateForClass(string $mailClass, array $to, ?RecipientInterface $replyTo, array $templateVars)
+    public function testCreateForClass(string $mailClass, array $to, ?RecipientInterface $replyTo, array $templateVars, string $subject = null)
     {
-        $mail = $this->mailFactory->createForClass($mailClass, $to, $replyTo, $templateVars);
+        $mail = $this->mailFactory->createForClass($mailClass, $to, $replyTo, $templateVars, $subject);
 
         $this->assertInstanceOf($mailClass, $mail);
         $this->assertSame('test', $mail->getApp());
@@ -59,6 +56,7 @@ class MailFactoryTest extends TestCase
         $this->assertSame($templateVars, $mail->getTemplateVars());
         $this->assertSame([], $mail->getCcRecipients());
         $this->assertSame([], $mail->getBccRecipients());
+        $this->assertSame($subject, $mail->getSubject());
     }
 
     /**

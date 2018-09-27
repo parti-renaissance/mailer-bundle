@@ -23,31 +23,37 @@ class Mail implements MailInterface
     private $ccRecipients;
     private $bccRecipients;
     private $replyTo;
+    private $sender;
+    private $subject;
     private $templateVars;
     private $templateName;
     private $createdAt;
     private $chunkId;
 
     /**
-     * @param RecipientInterface[]|iterable $toRecipients
-     * @param RecipientInterface[]          $ccRecipients
-     * @param RecipientInterface[]          $bccRecipients
-     * @param string[]                      $templateVars
+     * @param RecipientInterface[] $toRecipients
+     * @param RecipientInterface[] $ccRecipients
+     * @param RecipientInterface[] $bccRecipients
+     * @param string[]             $templateVars
      */
     final protected function __construct(
         string $app,
         iterable $toRecipients,
         RecipientInterface $replyTo = null,
+        SenderInterface $sender = null,
         array $ccRecipients = [],
         array $bccRecipients = [],
-        array $templateVars = []
+        array $templateVars = [],
+        string $subject = null
     ) {
         $this->app = $app;
         $this->toRecipients = $toRecipients;
         $this->replyTo = $replyTo;
+        $this->sender = $sender;
         $this->ccRecipients = $ccRecipients;
         $this->bccRecipients = $bccRecipients;
         $this->templateVars = MailUtils::validateTemplateVars($templateVars);
+        $this->subject = $subject;
         $this->createdAt = new \DateTimeImmutable();
     }
 
@@ -99,6 +105,22 @@ class Mail implements MailInterface
     /**
      * {@inheritdoc}
      */
+    public function getSender(): ?SenderInterface
+    {
+        return $this->sender;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getSubject(): ?string
+    {
+        return $this->subject;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     final public function getTemplateVars(): array
     {
         return $this->templateVars;
@@ -117,7 +139,7 @@ class Mail implements MailInterface
 
         $parts = \explode('\\', static::class);
 
-        return $this->templateName = \preg_replace_callback(
+        return $this->templateName = $this->app.'_'.\preg_replace_callback(
             '/(^|[a-z])([A-Z]+)([a-z])?/',
             function (array $matches) {
                 if (\strlen($matches[2]) > 1 && isset($matches[3]) && \strlen($matches[3]) > 0) {
@@ -183,9 +205,11 @@ class Mail implements MailInterface
             $this->app,
             $this->toRecipients,
             $this->replyTo,
+            $this->sender,
             $this->ccRecipients,
             $this->bccRecipients,
-            $this->templateVars
+            $this->templateVars,
+            $this->subject
         );
         $mail->type = $this->type;
         // ensure the template key is resolved

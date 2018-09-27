@@ -8,9 +8,9 @@ use Psr\Http\Message\ResponseInterface;
 
 interface PayloadFactoryInterface
 {
-    public function getSenderEmail(): ?string;
+    public function getSenderEmail(MailRequestInterface $mailRequest): ?string;
 
-    public function getSenderName(): ?string;
+    public function getSenderName(MailRequestInterface $mailRequest): ?string;
 
     /**
      * @throws InvalidMailRequestException

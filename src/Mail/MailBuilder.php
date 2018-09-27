@@ -15,14 +15,16 @@ class MailBuilder extends Mail implements MailBuilderInterface
     private $ccRecipients = [];
     private $bccRecipients = [];
     private $replyTo;
+    private $sender;
     private $templateVars = [];
+    private $subject;
 
     /**
      * {@inheritdoc}
      */
     public function addToRecipient(RecipientInterface $recipient): MailBuilderInterface
     {
-        $this->toRecipients[$recipient->getEmail()] = $recipient;
+        $this->toRecipients[] = $recipient;
 
         return $this;
     }
@@ -30,9 +32,14 @@ class MailBuilder extends Mail implements MailBuilderInterface
     /**
      * {@inheritdoc}
      */
-    public function removeToRecipient(RecipientInterface $recipient): MailBuilderInterface
+    public function removeToRecipient(RecipientInterface $recipientToRemove): MailBuilderInterface
     {
-        unset($this->toRecipients[$recipient->getEmail()]);
+        $this->toRecipients = array_filter(
+            $this->toRecipients,
+            function (Recipient $recipient) use ($recipientToRemove) {
+                return $recipient->getEmail() !== $recipientToRemove->getEmail();
+            }
+        );
 
         return $this;
     }
@@ -143,6 +150,16 @@ class MailBuilder extends Mail implements MailBuilderInterface
     /**
      * {@inheritdoc}
      */
+    public function setSender(SenderInterface $sender): MailBuilderInterface
+    {
+        $this->sender = $sender;
+
+        return $this;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function addTemplateVar(string $name, string $value): MailBuilderInterface
     {
         $this->templateVars[$name] = $value;
@@ -173,6 +190,16 @@ class MailBuilder extends Mail implements MailBuilderInterface
     /**
      * {@inheritdoc}
      */
+    public function setSubject(string $subject): MailBuilderInterface
+    {
+        $this->subject = $subject;
+
+        return $this;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function getMail(): MailInterface
     {
         if (!$this->toRecipients) {
@@ -183,9 +210,11 @@ class MailBuilder extends Mail implements MailBuilderInterface
             $this->getApp(),
             $this->resetToRecipients(),
             $this->replyTo,
+            $this->sender,
             $this->ccRecipients,
             $this->bccRecipients,
-            $this->templateVars
+            $this->templateVars,
+            $this->subject
         );
     }
 
