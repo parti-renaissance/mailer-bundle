@@ -36,14 +36,14 @@ interface MailRequestInterface
     public function hasCopyRecipients(): bool;
 
     /**
-     * @return Address[]|iterable
+     * @return Address[]
      */
-    public function getCcRecipients(): iterable;
+    public function getCcRecipients(): array;
 
     /**
-     * @return Address[]|iterable
+     * @return Address[]
      */
-    public function getBccRecipients(): iterable;
+    public function getBccRecipients(): array;
 
     public function getCampaign(): ?UuidInterface;
 

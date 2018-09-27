@@ -30,7 +30,6 @@ class Mail implements MailInterface
 
     /**
      * @param RecipientInterface[]|iterable $toRecipients
-     * @param RecipientInterface|null       $replyTo
      * @param RecipientInterface[]          $ccRecipients
      * @param RecipientInterface[]          $bccRecipients
      * @param string[]                      $templateVars
@@ -188,6 +187,7 @@ class Mail implements MailInterface
             $this->bccRecipients,
             $this->templateVars
         );
+        $mail->type = $this->type;
         // ensure the template key is resolved
         $mail->templateName = $this->templateName ?: $this->getTemplateName();
         $mail->chunkId = $this->chunkId;

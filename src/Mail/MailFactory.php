@@ -39,8 +39,7 @@ class MailFactory implements MailFactoryInterface
         array $to,
         RecipientInterface $replyTo = null,
         array $templateVars = []
-    ): MailInterface
-    {
+    ): MailInterface {
         $builder = MailBuilder::create($mailClass, $this->app)
             ->setToRecipients($to)
         ;

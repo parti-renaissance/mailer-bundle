@@ -9,7 +9,6 @@ use EnMarche\MailerBundle\Mail\RecipientInterface;
 use EnMarche\MailerBundle\Mailer\Mailer;
 use EnMarche\MailerBundle\Mailer\MailerInterface;
 use EnMarche\MailerBundle\MailPost\MailPostInterface;
-use EnMarche\MailerBundle\Test\NullMailTransporter;
 
 class DebugMailPost implements MailPostInterface
 {
@@ -23,8 +22,7 @@ class DebugMailPost implements MailPostInterface
         MailerInterface $mailer = null,
         MailFactoryInterface $mailFactory = null,
         string $mailPostName = 'default'
-    )
-    {
+    ) {
         $this->mailPostName = $mailPostName;
         $this->mailer = $mailer ?: new Mailer(new NullMailTransporter());
         $this->mailFactory = $mailFactory ?: new MailFactory('test');

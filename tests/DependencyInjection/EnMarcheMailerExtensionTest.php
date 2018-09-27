@@ -263,7 +263,7 @@ class EnMarcheMailerExtensionTest extends TestCase
                         'cc' => [
                             ['cc_email', 'cc_name'],
                         ],
-                    ]
+                    ],
                 ],
                 'default_mail_post' => 'custom',
             ],
@@ -431,9 +431,7 @@ class EnMarcheMailerExtensionTest extends TestCase
     }
 
     /**
-     * @param string          $id
      * @param Reference|mixed $reference
-     * @param int             $invalidBehavior
      */
     private function assertReference(string $id, $reference, int $invalidBehavior = ContainerInterface::EXCEPTION_ON_INVALID_REFERENCE): void
     {
@@ -449,8 +447,7 @@ class EnMarcheMailerExtensionTest extends TestCase
         string $app = 'test',
         $cc = [],
         $bcc = []
-    ): void
-    {
+    ): void {
         $this->assertContainerHasDefinition($has, $id);
 
         if ($has) {
@@ -472,8 +469,7 @@ class EnMarcheMailerExtensionTest extends TestCase
         string $mailFactoryId = MailFactoryInterface::class,
         string $mailerId = MailerInterface::class,
         bool $debug = false
-    ): void
-    {
+    ): void {
         $this->assertContainerHasDefinition($has, $id, !$debug);
 
         if ($has) {

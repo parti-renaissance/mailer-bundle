@@ -52,11 +52,11 @@ class AmqpMailTransporterTest extends TestCase
         $this->transporter = null;
     }
 
-    public function testTransport()
+    public function testTransport(): void
     {
         $to = ['email'];
         $mail = $this->getMail([$to]);
-        $routingKey = self::ROUTING_KEY.'_'.$mail->getType().'_'.$mail->getApp();
+        $routingKey = implode('.', [self::ROUTING_KEY, $mail->getType(), $mail->getApp()]);
 
         $this->logger->expects($this->once())
             ->method('info')
@@ -70,10 +70,10 @@ class AmqpMailTransporterTest extends TestCase
         $this->transporter->transport($mail);
     }
 
-    public function testTransportChunkable()
+    public function testTransportChunkable(): void
     {
         $to = [];
-        for ($i = 0; $i < Mail::DEFAULT_CHUNK_SIZE + 1; $i++) {
+        for ($i = 0; $i < Mail::DEFAULT_CHUNK_SIZE + 1; ++$i) {
             $to[] = ["email_$i"];
         }
         $mail = $this->getMail($to, true);
@@ -82,12 +82,11 @@ class AmqpMailTransporterTest extends TestCase
             break; // call once to generate the id
         }
 
-        $routingKey = self::ROUTING_KEY.'_'.$mail->getType().'_'.$mail->getApp();
         $logMessage = \sprintf(
             'Publishing mail chunk "%s(%s)" on "%s" with %s recipients.',
             $mail->getTemplateName(),
             $mail->getChunkId()->toString(),
-            $routingKey,
+            implode('.', [self::ROUTING_KEY, $mail->getType(), $mail->getApp()]),
             '%d'
         );
 
@@ -109,7 +108,7 @@ class AmqpMailTransporterTest extends TestCase
     private function getMail(array $to, bool $chunkable = false): MailInterface
     {
         return MailBuilder::create($chunkable ? CampaignMail::class : TransactionalMail::class, 'test')
-            ->setToRecipients(\array_map(function(array $to) { return new Recipient(...$to); }, $to))
+            ->setToRecipients(\array_map(function (array $to) { return new Recipient(...$to); }, $to))
             ->getMail()
        ;
     }

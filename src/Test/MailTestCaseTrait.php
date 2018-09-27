@@ -2,8 +2,9 @@
 
 namespace EnMarche\MailerBundle\Test;
 
+use EnMarche\MailerBundle\MailPost\MailPostInterface;
+
 /**
- * class \Symfony\Bundle/FrameworkBundle\Test\WebTestCase
  * @class \PhpUnit\Framework\TestCase
  */
 trait MailTestCaseTrait

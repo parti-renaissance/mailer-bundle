@@ -345,8 +345,7 @@ class MailRequestConsumerTest extends TestCase
 
     private function getSavedMailRequest()
     {
-        return new class() extends DummyMailRequest
-        {
+        return new class() extends DummyMailRequest {
             protected $id = 1;
         };
     }
