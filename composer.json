@@ -13,6 +13,7 @@
         "symfony/http-kernel": "~3.4 || ^4.0"
     },
     "require-dev": {
+        "coduo/php-matcher": "^3.1",
         "doctrine/doctrine-bundle": "^1.9",
         "guzzlehttp/guzzle": "^6.3",
         "php-amqplib/rabbitmq-bundle": "^1.14",

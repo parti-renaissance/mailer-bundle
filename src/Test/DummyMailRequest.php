@@ -12,6 +12,8 @@ class DummyMailRequest implements MailRequestInterface
     protected $app = 'test';
     protected $type = 'fake';
     protected $replyTo;
+    protected $senderName;
+    protected $senderEmail;
     protected $templateName = 'dummy';
     protected $templateVars = [];
     protected $recipientVars = [];
@@ -22,6 +24,7 @@ class DummyMailRequest implements MailRequestInterface
     protected $deliveredAt;
     protected $requestPayload;
     protected $responsePayload;
+    protected $subject;
 
     public function __construct(\DateTimeImmutable $createdAt = null)
     {
@@ -58,6 +61,22 @@ class DummyMailRequest implements MailRequestInterface
     public function getReplyTo(): ?Address
     {
         return $this->replyTo;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getSenderName(): ?string
+    {
+        return $this->senderName;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getSenderEmail(): ?string
+    {
+        return $this->senderEmail;
     }
 
     /**
@@ -124,6 +143,9 @@ class DummyMailRequest implements MailRequestInterface
         return $this->campaign;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function getCreatedAt(): \DateTimeImmutable
     {
         return $this->createdAt;
@@ -162,8 +184,19 @@ class DummyMailRequest implements MailRequestInterface
         $this->deliveredAt = $deliveredAt ?: new \DateTimeImmutable();
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function getDeliveredAt(): ?\DateTimeImmutable
     {
         return $this->deliveredAt;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getSubject(): ?string
+    {
+        return $this->subject;
     }
 }

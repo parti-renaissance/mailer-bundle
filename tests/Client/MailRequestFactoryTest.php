@@ -65,7 +65,7 @@ class MailRequestFactoryTest extends TestCase
             ->method('findOneForCampaign')
         ;
         $this->addressRepository->expects($this->exactly(4))
-            ->method('findOneForRecipient')
+            ->method('findOneByEmailAndName')
             ->willReturnOnConsecutiveCalls(null, null, null, null)
         ;
 
@@ -115,6 +115,9 @@ class MailRequestFactoryTest extends TestCase
             $mail->getType(),
             $mail->getTemplateName(),
             null,
+            'Sender Name',
+            'sender@email.com',
+            null,
             $mail->getTemplateVars(),
             [new Address(...$cc)],
             [],
@@ -126,7 +129,7 @@ class MailRequestFactoryTest extends TestCase
             ->willReturn($mailVars)
         ;
         $this->addressRepository->expects($this->exactly(2))
-            ->method('findOneForRecipient')
+            ->method('findOneByEmailAndName')
         ;
 
         $mailRequest = $this->mailRequestFactory->createRequestForMail($mail);

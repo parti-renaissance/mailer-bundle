@@ -12,14 +12,14 @@ class MailTest extends TestCase
 {
     public function provideTemplateNamesForMailClasses(): iterable
     {
-        yield FooMail::class => [FooMail::class, 'foo'];
-        yield FooBarMail::class => [FooBarMail::class, 'foo_bar'];
-        yield FooBarBaz::class => [FooBarBaz::class, 'foo_bar_baz'];
-        yield FooBarMailBaz::class => [FooBarMailBaz::class, 'foo_bar_mail_baz'];
-        yield BAZMail::class => [BAZMail::class, 'baz'];
-        yield HTMLStuffMail::class => [HTMLStuffMail::class, 'html_stuff'];
-        yield FixHTMLStuffMail::class => [FixHTMLStuffMail::class, 'fix_html_stuff'];
-        yield Foo1Mail::class => [Foo1Mail::class, 'foo1'];
+        yield FooMail::class => [FooMail::class, 'test_foo'];
+        yield FooBarMail::class => [FooBarMail::class, 'test_foo_bar'];
+        yield FooBarBaz::class => [FooBarBaz::class, 'test_foo_bar_baz'];
+        yield FooBarMailBaz::class => [FooBarMailBaz::class, 'test_foo_bar_mail_baz'];
+        yield BAZMail::class => [BAZMail::class, 'test_baz'];
+        yield HTMLStuffMail::class => [HTMLStuffMail::class, 'test_html_stuff'];
+        yield FixHTMLStuffMail::class => [FixHTMLStuffMail::class, 'test_fix_html_stuff'];
+        yield Foo1Mail::class => [Foo1Mail::class, 'test_foo1'];
     }
 
     /**

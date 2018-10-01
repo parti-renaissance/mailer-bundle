@@ -16,6 +16,10 @@ interface MailRequestInterface
 
     public function getReplyTo(): ?Address;
 
+    public function getSenderName(): ?string;
+
+    public function getSenderEmail(): ?string;
+
     public function getTemplateName(): string;
 
     /**
@@ -58,4 +62,6 @@ interface MailRequestInterface
     public function deliver(array $responsePayload): void;
 
     public function getDeliveredAt(): ?\DateTimeImmutable;
+
+    public function getSubject(): ?string;
 }

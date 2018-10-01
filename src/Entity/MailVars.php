@@ -70,7 +70,7 @@ class MailVars
      * @var Address[]|Collection
      *
      * @ORM\ManyToMany(targetEntity="Address", cascade={"persist", "refresh"})
-     * @ORM\JoinTable(name="mails_cc")
+     * @ORM\JoinTable(name="mailer_mails_cc")
      */
     private $ccRecipients;
 
@@ -78,7 +78,7 @@ class MailVars
      * @var Address[]|Collection
      *
      * @ORM\ManyToMany(targetEntity="Address", cascade={"persist", "refresh"})
-     * @ORM\JoinTable(name="mails_bcc")
+     * @ORM\JoinTable(name="mailer_mails_bcc")
      */
     private $bccRecipients;
 
@@ -97,6 +97,27 @@ class MailVars
     private $createdAt;
 
     /**
+     * @var string|null
+     *
+     * @ORM\Column(nullable=true)
+     */
+    private $senderName;
+
+    /**
+     * @var string|null
+     *
+     * @ORM\Column(nullable=true)
+     */
+    private $senderEmail;
+
+    /**
+     * @var string|null
+     *
+     * @ORM\Column(nullable=true)
+     */
+    private $subject;
+
+    /**
      * @param string[]  $templateVars
      * @param Address[] $ccRecipients
      * @param Address[] $bccRecipients
@@ -106,6 +127,9 @@ class MailVars
         string $type,
         string $templateName,
         Address $replyTo = null,
+        string $senderName = null,
+        string $senderEmail = null,
+        string $subject = null,
         array $templateVars = [],
         array $ccRecipients = [],
         array $bccRecipients = [],
@@ -115,9 +139,14 @@ class MailVars
         $this->app = $app;
         $this->type = $type;
         $this->replyTo = $replyTo;
+        $this->senderName = $senderName;
+        $this->senderEmail = $senderEmail;
+        $this->subject = $subject;
         $this->templateName = $templateName;
         $this->templateVars = $templateVars;
+
         $this->ccRecipients = new ArrayCollection();
+
         foreach ($ccRecipients as $ccRecipient) {
             if (!$ccRecipient instanceof Address) {
                 throw new \InvalidArgumentException(\sprintf(
@@ -128,7 +157,9 @@ class MailVars
             }
             $this->ccRecipients->add($ccRecipient);
         }
+
         $this->bccRecipients = new ArrayCollection();
+
         foreach ($bccRecipients as $bccRecipient) {
             if (!$bccRecipient instanceof Address) {
                 throw new \InvalidArgumentException(\sprintf(
@@ -161,6 +192,21 @@ class MailVars
     public function getReplyTo(): ?Address
     {
         return $this->replyTo;
+    }
+
+    public function getSenderName(): ?string
+    {
+        return $this->senderName;
+    }
+
+    public function getSenderEmail(): ?string
+    {
+        return $this->senderEmail;
+    }
+
+    public function getSubject(): ?string
+    {
+        return $this->subject;
     }
 
     public function getTemplateName(): string

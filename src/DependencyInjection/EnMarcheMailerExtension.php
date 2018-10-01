@@ -343,6 +343,7 @@ class EnMarcheMailerExtension extends Extension implements PrependExtensionInter
                     ->addArgument($mailPostName)
                     ->setPublic(true)
                 ;
+                $container->getAlias(MailPostInterface::class)->setPublic(true);
                 if ($isDefault) {
                     // Need to set the class if the default definition already exists
                     $defaultMailPost->setClass(DebugMailPost::class);

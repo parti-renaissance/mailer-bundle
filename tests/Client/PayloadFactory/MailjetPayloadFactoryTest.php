@@ -94,7 +94,6 @@ class MailjetPayloadFactoryTest extends TestCase
         $recipient1Email = 'recipient_1_email';
         $recipient1Vars = ['recipient_var' => 'test_1'];
         $recipient2Email = 'recipient_2_email';
-        $recipient2Vars = ['recipient_var' => 'test_2'];
         $replyToEmail = 'reply_to_email';
         $templateVars = ['template_var' => 'test_a', 'recipient_var' => 'default must be overridden'];
 
@@ -102,15 +101,15 @@ class MailjetPayloadFactoryTest extends TestCase
             'MJ-TemplateID' => 'dummy',
             'MJ-TemplateLanguage' => true,
             'Headers' => ['Reply-To' => \sprintf('<%s>', $replyToEmail)],
+            'Vars' => $templateVars,
             'Recipients' => [
                 [
                     'Email' => $recipient1Email,
                     'Name' => $recipient1Name,
-                    'Vars' => \array_merge($templateVars, $recipient1Vars),
+                    'Vars' => $recipient1Vars,
                 ],
                 [
                     'Email' => $recipient2Email,
-                    'Vars' => \array_merge($templateVars, $recipient2Vars),
                 ],
             ],
         ];
@@ -118,7 +117,7 @@ class MailjetPayloadFactoryTest extends TestCase
         $mailRequest = $this->getMailRequest(
             [
                 $this->getRecipientVars($recipient1Email, $recipient1Name, $recipient1Vars),
-                $this->getRecipientVars($recipient2Email, null, $recipient2Vars),
+                $this->getRecipientVars($recipient2Email),
             ],
             [/* no cc */],
             [/* no bcc */],

@@ -15,6 +15,7 @@ class MailRequestFactory implements MailRequestFactoryInterface
 {
     private $addressRepository;
     private $mailVarsRepository;
+    private $createdAddresses = [];
 
     public function __construct(AddressRepository $addressRepository, MailVarsRepository $mailVarsRepository)
     {
@@ -42,12 +43,16 @@ class MailRequestFactory implements MailRequestFactoryInterface
         }
 
         $replyTo = $mail->getReplyTo();
+        $sender = $mail->getSender();
 
         return new MailVars(
             $mail->getApp(),
             $mail->getType(),
             $mail->getTemplateName(),
             $replyTo ? $this->createAddressFromRecipient($replyTo) : null,
+            $sender ? $sender->getName() : null,
+            $sender ? $sender->getEmail() : null,
+            $mail->getSubject(),
             $mail->getTemplateVars(),
             $this->createAddressesFromRecipients($mail->getCcRecipients()),
             $this->createAddressesFromRecipients($mail->getBccRecipients()),
@@ -82,10 +87,21 @@ class MailRequestFactory implements MailRequestFactoryInterface
 
     private function createAddressFromRecipient(RecipientInterface $recipient): Address
     {
-        if ($address = $this->addressRepository->findOneForRecipient($recipient)) {
+        return $this->createAddress($recipient->getEmail(), $recipient->getName());
+    }
+
+    private function createAddress(string $email, string $name = null): Address
+    {
+        $address = $this->addressRepository->findOneByEmailAndName($email, $name);
+
+        if ($address) {
             return $address;
         }
 
-        return new Address($recipient->getEmail(), $recipient->getName());
+        if (isset($this->createdAddresses["${email}_${name}"])) {
+            return $this->createdAddresses["${email}_${name}"];
+        }
+
+        return $this->createdAddresses["${email}_${name}"] = new Address($email, $name);
     }
 }

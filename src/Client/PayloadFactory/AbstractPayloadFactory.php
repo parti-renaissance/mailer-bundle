@@ -2,6 +2,7 @@
 
 namespace EnMarche\MailerBundle\Client\PayloadFactory;
 
+use EnMarche\MailerBundle\Client\MailRequestInterface;
 use EnMarche\MailerBundle\Client\PayloadFactoryInterface;
 
 abstract class AbstractPayloadFactory implements PayloadFactoryInterface
@@ -15,13 +16,21 @@ abstract class AbstractPayloadFactory implements PayloadFactoryInterface
         $this->senderName = $senderName;
     }
 
-    public function getSenderEmail(): ?string
+    public function getSenderEmail(MailRequestInterface $mailRequest): ?string
     {
+        if ($senderEmail = $mailRequest->getSenderEmail()) {
+            return $senderEmail;
+        }
+
         return $this->senderEmail;
     }
 
-    public function getSenderName(): ?string
+    public function getSenderName(MailRequestInterface $mailRequest): ?string
     {
+        if ($senderName = $mailRequest->getSenderName()) {
+            return $senderName;
+        }
+
         return $this->senderName;
     }
 }

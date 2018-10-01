@@ -4,6 +4,7 @@ namespace EnMarche\MailerBundle\Test;
 
 use EnMarche\MailerBundle\Mail\MailInterface;
 use EnMarche\MailerBundle\Mail\RecipientInterface;
+use EnMarche\MailerBundle\Mail\SenderInterface;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
 
@@ -14,6 +15,8 @@ class DummyMail implements MailInterface
     protected $ccRecipients = [];
     protected $bccRecipients = [];
     protected $replyTo;
+    protected $sender;
+    protected $subject;
     protected $templateVars = [];
     protected $templateName = 'dummy';
     protected $type = 'fake';
@@ -71,6 +74,14 @@ class DummyMail implements MailInterface
     public function getReplyTo(): ?RecipientInterface
     {
         return $this->replyTo;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getSender(): ?SenderInterface
+    {
+        return $this->sender;
     }
 
     /**
@@ -134,5 +145,13 @@ class DummyMail implements MailInterface
     public function serialize(): string
     {
         return \serialize($this);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getSubject(): ?string
+    {
+        return $this->subject;
     }
 }

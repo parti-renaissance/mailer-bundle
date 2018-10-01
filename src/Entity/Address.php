@@ -8,8 +8,8 @@ use Doctrine\ORM\Mapping as ORM;
  * @ORM\Entity(repositoryClass="EnMarche\MailerBundle\Repository\AddressRepository")
  * @ORM\Table(
  *     name="mailer_addresses",
- *     indexes={
- *         @ORM\Index(name="unique_address_idx", columns={"canonical_email", "name"})
+ *     uniqueConstraints={
+ *         @ORM\UniqueConstraint(name="unique_email_name", columns={"canonical_email", "name"})
  *     }
  * )
  */
@@ -41,7 +41,7 @@ class Address
     /**
      * @var string
      *
-     * @ORM\Column(unique=true)
+     * @ORM\Column
      */
     private $canonicalEmail;
 
