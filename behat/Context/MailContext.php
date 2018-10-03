@@ -23,7 +23,7 @@ class MailContext extends RawMinkContext
     public function iShouldHaveMessages(int $number, string $mailClass = null, string $mailPostName = null): void
     {
         $mailPost = $this->getMailPost($mailPostName);
-        $count = $mailClass ? $mailPost->countMails() : $mailPost->countMailsForClass($mailClass);
+        $count = $mailClass ? $mailPost->countMailsForClass($mailClass) : $mailPost->countMails();
 
         if ($number !== $count) {
             throw new \RuntimeException(sprintf('Found %d email(s) instead of %d.', $count, $number));

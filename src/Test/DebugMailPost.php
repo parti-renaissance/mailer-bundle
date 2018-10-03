@@ -58,7 +58,7 @@ class DebugMailPost implements MailPostInterface
 
     public function countMails(): int
     {
-        return \count(\array_merge(...self::$mails));
+        return \count(\array_merge(...array_values(self::$mails)));
     }
 
     public function countMailsForClass(string $mailClass): int
