@@ -2,6 +2,8 @@
 
 namespace EnMarche\MailerBundle\Test;
 
+use Coduo\PHPMatcher\Factory\SimpleFactory;
+use EnMarche\MailerBundle\Mail\MailInterface;
 use EnMarche\MailerBundle\Mail\RecipientInterface;
 use EnMarche\MailerBundle\MailPost\MailPostInterface;
 
@@ -43,7 +45,7 @@ trait MailTestCaseTrait
     public function assertMailSentForRecipient(string $expectedEmail, string $mailClass = null, string $mailPostName = null): void
     {
         $mailPost = $this->getMailPost($mailPostName);
-        $mails = $mailClass ? $mailPost->getMailsForClass($mailClass) : $mailPost->getMails();
+        $mails = $this->getMails($mailClass, $mailPostName);
         $sent = false;
 
         foreach ($mails as $mail) {
@@ -67,7 +69,7 @@ trait MailTestCaseTrait
     public function assertMailSentForRecipients(array $expectedEmails, string $mailClass = null, string $mailPostName = null): void
     {
         $mailPost = $this->getMailPost($mailPostName);
-        $mails = $mailClass ? $mailPost->getMailsForClass($mailClass) : $mailPost->getMails();
+        $mails = $this->getMails($mailClass, $mailPostName);
 
         foreach ($expectedEmails as $i => $expectedEmail) {
             $sent = false;
@@ -95,6 +97,33 @@ trait MailTestCaseTrait
         ));
     }
 
+    public function assertMailSentForRecipientContainsVars(string $expectedEmail, array $expectedVars, string $mailClass): void
+    {
+        $this->assertMailSentForRecipient($expectedEmail, $mailClass);
+
+        $factory = new SimpleFactory();
+        $matcher = $factory->createMatcher();
+
+        foreach ($this->getMails($mailClass) as $mail) {
+            foreach ($mail->getToRecipients() as $recipient) {
+                if ($expectedEmail === $recipient->getEmail()) {
+                    $isMatched = $matcher->match(
+                        $mailVars = array_merge($mail->getTemplateVars(), $recipient->getTemplateVars()),
+                        $expectedVars
+                    );
+                    self::assertTrue(
+                        $isMatched,
+                        sprintf(
+                            "The mail vars don't match the expected array\nExpected: %s\nActual:%s",
+                            var_export($expectedVars, true),
+                            var_export($mailVars, true)
+                        )
+                    );
+                }
+            }
+        }
+    }
+
     public static function assertMessageRecipient(
         string $expectedEmail,
         string $expectedName,
@@ -104,6 +133,16 @@ trait MailTestCaseTrait
         self::assertSame($expectedEmail, $recipient->getEmail());
         self::assertSame($expectedName, $recipient->getName());
         self::assertSame($expectedVars, $recipient->getTemplateVars());
+    }
+
+    /**
+     * @return MailInterface[]
+     */
+    public function getMails(?string $mailClass, string $mailPostName = null): array
+    {
+        $mailPost = $this->getMailPost($mailPostName);
+
+        return $mailClass ? $mailPost->getMailsForClass($mailClass) : $mailPost->getMails();
     }
 
     protected function clearMails(string $mailPostName = null): void

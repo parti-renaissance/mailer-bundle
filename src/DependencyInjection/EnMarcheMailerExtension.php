@@ -280,11 +280,21 @@ class EnMarcheMailerExtension extends Extension implements PrependExtensionInter
                 ));
             }
 
-            $container
-                ->findDefinition($payloadFactoryServiceId)
-                ->setArgument(0, $httpClientConfig['sender']['email'] ?? null)
-                ->setArgument(1, $httpClientConfig['sender']['name'] ?? null)
-            ;
+            if (isset($httpClientConfig['sender']['email']) || $httpClientConfig['sender']['name']) {
+                $container
+                    ->findDefinition($payloadFactoryServiceId)
+                    ->setArgument(0, $httpClientConfig['sender']['email'] ?? null)
+                    ->setArgument(1, $httpClientConfig['sender']['name'] ?? null)
+                ;
+
+                if (isset($httpClientConfig['sender']['email'])) {
+                    $container->resolveEnvPlaceholders($httpClientConfig['sender']['email']);
+                }
+
+                if (isset($httpClientConfig['sender']['name'])) {
+                    $container->resolveEnvPlaceholders($httpClientConfig['sender']['name']);
+                }
+            }
 
             $mailClientId = \sprintf('en_marche_mailer.%s_mail_client', $httpClientName);
             $container->register($mailClientId, MailClient::class)
