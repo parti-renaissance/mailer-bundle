@@ -27,7 +27,8 @@ class MailPost implements MailPostInterface
         RecipientInterface $replyTo = null,
         array $templateVars = [],
         string $subject = null,
-        SenderInterface $sender = null
+        SenderInterface $sender = null,
+        array $ccRecipients = []
     ): void {
         $to = $to instanceof RecipientInterface ? [$to] : $to;
 
@@ -36,7 +37,15 @@ class MailPost implements MailPostInterface
         }
 
         $this->mailer->send(
-            $this->mailFactory->createForClass($mailClass, $to, $replyTo, $templateVars, $subject, $sender)
+            $this->mailFactory->createForClass(
+                $mailClass,
+                $to,
+                $replyTo,
+                $templateVars,
+                $subject,
+                $sender,
+                $ccRecipients
+            )
         );
     }
 }

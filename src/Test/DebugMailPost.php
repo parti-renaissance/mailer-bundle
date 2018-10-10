@@ -38,13 +38,22 @@ class DebugMailPost implements MailPostInterface
         RecipientInterface $replyTo = null,
         array $templateVars = [],
         string $subject = null,
-        SenderInterface $sender = null
+        SenderInterface $sender = null,
+        array $ccRecipients = []
     ): void {
         if ($to instanceof RecipientInterface) {
             $to = [$to];
         }
 
-        $mail = $this->mailFactory->createForClass($mailClass, $to, $replyTo, $templateVars, $subject, $sender);
+        $mail = $this->mailFactory->createForClass(
+            $mailClass,
+            $to,
+            $replyTo,
+            $templateVars,
+            $subject,
+            $sender,
+            $ccRecipients
+        );
 
         self::$mails[$mailClass][] = self::$lastSentMail = $mail;
 
