@@ -45,7 +45,7 @@ class MailContext extends RawMinkContext
         $matcher = $simpleFactory->createMatcher();
 
         foreach ($mailPost->getMailsForClass($maiClass) as $mail) {
-            if (1 !== \count($recipients = $mail->getToRecipients())) {
+            if (0 === \count($recipients = $mail->getToRecipients())) {
                 throw new \RuntimeException('Mail has no recipient.');
             }
             if ($recipient !== $email = $recipients[0]->getEmail()) {
