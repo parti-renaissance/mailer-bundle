@@ -114,7 +114,7 @@ trait MailTestCaseTrait
                     self::assertTrue(
                         $isMatched,
                         sprintf(
-                            "The mail vars don't match the expected array\nExpected: %s\nActual:%s",
+                            "The mail vars don't match the expected array\nExpected: %s\nActual: %s",
                             var_export($expectedVars, true),
                             var_export($mailVars, true)
                         )

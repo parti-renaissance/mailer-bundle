@@ -5,8 +5,8 @@ namespace EnMarche\MailerBundle\Mail;
 class MailFactory implements MailFactoryInterface
 {
     private $app;
-    private $cc;
-    private $bcc;
+    private $cc = [];
+    private $bcc = [];
 
     /**
      * @param string  $app The application key name
@@ -40,7 +40,8 @@ class MailFactory implements MailFactoryInterface
         RecipientInterface $replyTo = null,
         array $templateVars = [],
         string $subject = null,
-        SenderInterface $sender = null
+        SenderInterface $sender = null,
+        array $ccRecipients = []
     ): MailInterface {
         $builder = MailBuilder::create($mailClass, $this->app)
             ->setToRecipients($to)
@@ -55,8 +56,8 @@ class MailFactory implements MailFactoryInterface
         if ($subject) {
             $builder->setSubject($subject);
         }
-        if ($this->cc) {
-            $builder->setCcRecipients($this->cc);
+        if ($this->cc || $ccRecipients) {
+            $builder->setCcRecipients(array_merge($this->cc, $ccRecipients));
         }
         if ($this->bcc) {
             $builder->setBccRecipients($this->bcc);

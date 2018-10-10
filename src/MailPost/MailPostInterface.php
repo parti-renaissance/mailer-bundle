@@ -22,6 +22,7 @@ interface MailPostInterface
         RecipientInterface $replyTo = null,
         array $templateVars = [],
         string $subject = null,
-        SenderInterface $sender = null
+        SenderInterface $sender = null,
+        array $ccRecipients = []
     ): void;
 }
