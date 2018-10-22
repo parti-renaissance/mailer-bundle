@@ -16,6 +16,11 @@ abstract class AbstractPayloadFactory implements PayloadFactoryInterface
         $this->senderName = $senderName;
     }
 
+    public function getSendEndpoint(): string
+    {
+        return '';
+    }
+
     public function getSenderEmail(MailRequestInterface $mailRequest): ?string
     {
         if ($senderEmail = $mailRequest->getSenderEmail()) {

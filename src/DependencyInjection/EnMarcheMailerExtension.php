@@ -2,12 +2,15 @@
 
 namespace EnMarche\MailerBundle\DependencyInjection;
 
+use Doctrine\Common\Persistence\ObjectManager;
 use EnMarche\MailerBundle\Client\MailClient;
 use EnMarche\MailerBundle\Client\MailClientsRegistryInterface;
 use EnMarche\MailerBundle\Client\MailRequestFactoryInterface;
 use EnMarche\MailerBundle\Client\PayloadFactory\PayloadType;
+use EnMarche\MailerBundle\Command\TemplateSynchronizeCommand;
 use EnMarche\MailerBundle\Consumer\MailConsumer;
 use EnMarche\MailerBundle\Consumer\MailRequestConsumer;
+use EnMarche\MailerBundle\Consumer\MailTemplateSyncConsumer;
 use EnMarche\MailerBundle\Entity\Address;
 use EnMarche\MailerBundle\Entity\MailRequest;
 use EnMarche\MailerBundle\Entity\MailVars;
@@ -21,6 +24,7 @@ use EnMarche\MailerBundle\Mailer\Transporter\TransporterType;
 use EnMarche\MailerBundle\Repository\AddressRepository;
 use EnMarche\MailerBundle\Repository\MailRequestRepository;
 use EnMarche\MailerBundle\Repository\MailVarsRepository;
+use EnMarche\MailerBundle\TemplateSynchronizer\Manager;
 use EnMarche\MailerBundle\Test\DebugMailPost;
 use EnMarche\MailerBundle\MailPost\MailPost;
 use EnMarche\MailerBundle\MailPost\MailPostInterface;
@@ -29,7 +33,6 @@ use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\Alias;
 use Symfony\Component\DependencyInjection\Compiler\ServiceLocatorTagPass;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
-use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Extension\PrependExtensionInterface;
 use Symfony\Component\DependencyInjection\Loader\XmlFileLoader;
@@ -85,6 +88,18 @@ class EnMarcheMailerExtension extends Extension implements PrependExtensionInter
                     MailRequestConsumer::class,
                     $config['mail_api_proxy']['routing_keys']
                 );
+
+                if ($config['mail_templates_sync'] === true) {
+                    $amqpConfig['consumers']['en_marche_mailer_mail_templates_sync'] = $this->createAMQPConsumerConfiguration(
+                        $amqpConnexion,
+                        'en_marche_mailer_mail_templates_sync',
+                        MailTemplateSyncConsumer::class,
+                        ['em_mails.templates_sync']
+                    );
+                }
+            }
+            if (isset($config['mail_templates'])) {
+                $amqpConfig['producers']['en_marche_mailer_mail_templates_sync'] = $this->createAMQPProducerConfiguration($amqpConnexion);
             }
 
             $container->prependExtensionConfig('old_sound_rabbit_mq', $amqpConfig);
@@ -155,12 +170,19 @@ class EnMarcheMailerExtension extends Extension implements PrependExtensionInter
         }
         if (isset($config['mail_post'])) {
             $this->registerMailPostConfiguration($config['mail_post'], $container, $loader);
+
+            if (isset($config['mail_templates'])) {
+                $this->registerMailTemplateConfiguration($config['mail_templates'], $config['mail_post']['app_name'], $container, $loader);
+            }
         }
         if (isset($config['mail_aggregator'])) {
             $this->registerMailAggregatorConfiguration($config['mail_aggregator'], $container, $loader);
         }
         if (isset($config['mail_api_proxy'])) {
             $this->registerMailApiProxyConfiguration($config['mail_api_proxy'], $container, $loader);
+        }
+        if ($config['mail_templates_sync'] === true) {
+            $loader->load('mail_templates_sync.xml');
         }
     }
 
@@ -221,12 +243,11 @@ class EnMarcheMailerExtension extends Extension implements PrependExtensionInter
 
         switch ($config['transport']['type']) {
             case TransporterType::AMQP:
-                $transporter = $container->getDefinition($transporterId)
+                $container->getDefinition($transporterId)
                     ->setArgument(0, new Reference('old_sound_rabbit_mq.en_marche_mailer_mail_producer'))
                     ->setArgument(1, $config['transport']['chunk_size'])
                     ->setArgument(2, 'em_mails')
                 ;
-                $this->injectLogger($transporter);
 
                 break;
 
@@ -246,17 +267,12 @@ class EnMarcheMailerExtension extends Extension implements PrependExtensionInter
         $loader->load('mail_aggregator.xml');
         $this->loadDoctrineConfig($loader);
 
-        $container->getDefinition('en_marche_mailer.client.mail_request_factory.default')
-            ->addArgument(new Reference(AddressRepository::class))
-            ->addArgument(new Reference(MailVarsRepository::class))
-        ;
-        $mailConsumer = $container->getDefinition(MailConsumer::class)
+        $container->getDefinition(MailConsumer::class)
             ->setArgument(0, new Reference('old_sound_rabbit_mq.en_marche_mailer_mail_request_producer'))
             ->setArgument(1, 'em_mail_requests')
-            ->setArgument(2, new Reference('doctrine.orm.en_marche_mailer_entity_manager'))
+            ->setArgument(2, new Reference(ObjectManager::class))
             ->setArgument(3, new Reference(MailRequestFactoryInterface::class))
         ;
-        $this->injectLogger($mailConsumer);
     }
 
     private function registerMailApiProxyConfiguration(array $config, ContainerBuilder $container, XmlFileLoader $loader)
@@ -310,12 +326,28 @@ class EnMarcheMailerExtension extends Extension implements PrependExtensionInter
             ->addArgument(ServiceLocatorTagPass::register($container, $mailClients))
         ;
 
-        $mailRequestConsumer = $container->getDefinition(MailRequestConsumer::class)
+        $container->getDefinition(MailRequestConsumer::class)
             ->setArgument(0, new Reference(MailRequestRepository::class))
             ->setArgument(1, new Reference('doctrine.orm.en_marche_mailer_entity_manager'))
             ->setArgument(2, new Reference(MailClientsRegistryInterface::class))
         ;
-        $this->injectLogger($mailRequestConsumer);
+    }
+
+    private function registerMailTemplateConfiguration(array $config, string $appName, ContainerBuilder $container, XmlFileLoader $loader): void
+    {
+        $loader->load('mail_templates.xml');
+
+        $container
+            ->findDefinition(TemplateSynchronizeCommand::class)
+            ->addArgument($config['mail_class_paths'])
+            ->addArgument($config['template_paths'])
+        ;
+
+        $container
+            ->findDefinition(Manager::class)
+            ->setArgument(1, new Reference('old_sound_rabbit_mq.en_marche_mailer_mail_templates_sync_producer'))
+            ->setArgument(2, $appName)
+        ;
     }
 
     private function configureMailPost(ContainerBuilder $container, string $appName, array $mailPosts, string $defaultPostName): void
@@ -380,13 +412,5 @@ class EnMarcheMailerExtension extends Extension implements PrependExtensionInter
         $loader->load('doctrine.xml');
 
         $this->doctrineConfigured = true;
-    }
-
-    private function injectLogger(Definition $definition): void
-    {
-        $definition->setArgument('$logger', new Reference(
-            'monolog.logger.en_marche_mailer',
-            ContainerInterface::NULL_ON_INVALID_REFERENCE
-        ));
     }
 }

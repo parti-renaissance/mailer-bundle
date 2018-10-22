@@ -29,8 +29,8 @@ class Configuration implements ConfigurationInterface
                     if (!$config['mail_aggregator']['enabled']) {
                         unset($config['mail_aggregator']);
                     }
-                    if (!$config['mail_api_proxy']['enabled']) {
-                        unset($config['mail_api_proxy']);
+                    if (!$config['mail_api']['enabled']) {
+                        unset($config['mail_api']);
                     }
 
                     return $config;
@@ -41,7 +41,7 @@ class Configuration implements ConfigurationInterface
                     $useAMQPTransporter = isset($config['mail_post']['transport']['type'])
                         && TransporterType::AMQP === $config['mail_post']['transport']['type']
                     ;
-                    $useAMQPConsumer = isset($config['mail_aggregator']) || isset($config['mail_api_proxy']);
+                    $useAMQPConsumer = isset($config['mail_aggregator']) || isset($config['mail_api']['proxy']);
 
                     return ($useAMQPTransporter || $useAMQPConsumer) && empty($config['amqp_connexion']);
                 })
@@ -49,7 +49,7 @@ class Configuration implements ConfigurationInterface
             ->end()
             ->validate()
                 ->ifTrue(function ($config) {
-                    $useDatabase = isset($config['mail_aggregator']) || isset($config['mail_api_proxy']);
+                    $useDatabase = isset($config['mail_aggregator']) || isset($config['mail_api']['proxy']);
 
                     return $useDatabase && empty($config['database_connexion']);
                 })
@@ -60,7 +60,8 @@ class Configuration implements ConfigurationInterface
         $this->addConnexionSection($rootNode);
         $this->addMailPostSection($rootNode);
         $this->addMailAggregatorSection($rootNode);
-        $this->addMailApiProxySection($rootNode);
+        $this->addMailApiSection($rootNode);
+        $this->addMailTemplateSection($rootNode);
 
         return $treeBuilder;
     }
@@ -191,11 +192,48 @@ class Configuration implements ConfigurationInterface
      * Used for an application which consumes MailRequestInterface instances to send them by HTTP.
      * This application acts as a proxy for other applications needing to send mails.
      */
-    private function addMailApiProxySection(ArrayNodeDefinition $rootNode): void
+    private function addMailApiSection(ArrayNodeDefinition $rootNode): void
+    {
+        $mailApiNode = $rootNode->children()->arrayNode('mail_api');
+
+        $this->addMailApiHttpClientsSection($mailApiNode);
+        $this->addMailApiTemplatesSyncSection($mailApiNode);
+        $this->addMailApiProxySection($mailApiNode);
+
+        $mailApiNode->end()->end();
+    }
+
+    private function addMailTemplateSection(ArrayNodeDefinition $rootNode)
     {
         $rootNode
             ->children()
-                ->arrayNode('mail_api_proxy')
+                ->booleanNode('mail_templates_sync')
+                    ->defaultFalse()
+                ->end()
+                ->arrayNode('mail_templates')
+                    ->children()
+                        ->scalarNode('routing_key')
+                            ->defaultValue('em_mails.templates_sync')
+                        ->end()
+                        ->arrayNode('mail_class_paths')
+                            ->defaultValue(['%kernel.project_dir%/src'])
+                            ->scalarPrototype()->end()
+                        ->end()
+                        ->arrayNode('template_paths')
+                            ->defaultValue(['%kernel.project_dir%/templates/'])
+                            ->scalarPrototype()->end()
+                        ->end()
+                    ->end()
+                ->end()
+            ->end()
+        ;
+    }
+
+    private function addMailApiProxySection(ArrayNodeDefinition $rootNode)
+    {
+        $rootNode
+            ->children()
+                ->arrayNode('proxy')
                     ->canBeEnabled()
                     ->children()
                         ->arrayNode('routing_keys')
@@ -211,9 +249,7 @@ class Configuration implements ConfigurationInterface
                             ->requiresAtLeastOneElement()
                             ->arrayPrototype()
                                 ->children()
-                                    ->scalarNode('api_type')->defaultValue(PayloadType::MAILJET)->end()
-                                    ->scalarNode('public_api_key')->isRequired()->end()
-                                    ->scalarNode('private_api_key')->isRequired()->end()
+                                    ->scalarNode('from')->isRequired()->end()
                                     ->arrayNode('options')
                                         ->variablePrototype()
                                             ->info('See the "config" key of CSA Guzzle clients configuration.')
@@ -223,6 +259,67 @@ class Configuration implements ConfigurationInterface
                                         ->children()
                                             ->scalarNode('email')->end()
                                             ->scalarNode('name')->end()
+                                        ->end()
+                                    ->end()
+                                ->end()
+                            ->end()
+                        ->end()
+                    ->end()
+                ->end()
+            ->end()
+        ;
+    }
+
+    private function addMailApiHttpClientsSection(ArrayNodeDefinition $mailApiNode)
+    {
+        $mailApiNode
+            ->children()
+                ->arrayNode('http_clients')
+                    ->isRequired()
+                    ->useAttributeAsKey('mail_api_client')
+                    ->requiresAtLeastOneElement()
+                    ->arrayPrototype()
+                        ->children()
+                            ->booleanNode('abstract')->defaultFalse()->end()
+                            ->scalarNode('from')->end()
+                            ->scalarNode('public_api_key')->end()
+                            ->scalarNode('private_api_key')->end()
+                            ->arrayNode('options')
+                                ->variablePrototype()
+                                    ->info('See the "config" key of CSA Guzzle clients configuration.')
+                                ->end()
+                            ->end()
+                            ->arrayNode('sender')
+                                ->children()
+                                    ->scalarNode('email')->end()
+                                    ->scalarNode('name')->end()
+                                ->end()
+                            ->end()
+                        ->end()
+                    ->end()
+                ->end()
+            ->end()
+        ;
+    }
+
+    private function addMailApiTemplatesSyncSection(ArrayNodeDefinition $mailApiNode)
+    {
+        $mailApiNode
+            ->children()
+                ->arrayNode('templates_sync')
+                    ->children()
+                        ->arrayNode('http_clients')
+                            ->isRequired()
+                            ->useAttributeAsKey('mail_api_client')
+                            ->requiresAtLeastOneElement()
+                            ->arrayPrototype()
+                                ->children()
+                                    ->scalarNode('from')->end()
+                                    ->scalarNode('private_api_key')->end()
+                                    ->scalarNode('private_api_key')->end()
+                                    ->arrayNode('options')
+                                        ->variablePrototype()
+                                            ->info('See the "config" key of CSA Guzzle clients configuration.')
                                         ->end()
                                     ->end()
                                 ->end()

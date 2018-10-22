@@ -19,6 +19,13 @@ use Psr\Http\Message\ResponseInterface;
  */
 class MailjetPayloadFactory extends AbstractPayloadFactory
 {
+    private const SEND_ENDPOINT = '/send';
+
+    public function getSendEndpoint(): string
+    {
+        return self::SEND_ENDPOINT;
+    }
+
     /**
      * {@inheritdoc}
      */

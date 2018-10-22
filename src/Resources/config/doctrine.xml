@@ -21,5 +21,10 @@
             <argument>EnMarche\MailerBundle\Entity\MailVars</argument>
         </service>
         <service id="EnMarche\MailerBundle\Repository\MailVarsRepository" alias="en_marche_mailer.doctrine.repository.mail_vars" public="false" />
+
+        <service id="EnMarche\MailerBundle\Repository\TemplateRepository" public="false">
+            <factory service="doctrine.orm.en_marche_mailer_entity_manager" method="getRepository" />
+            <argument>EnMarche\MailerBundle\Entity\Template</argument>
+        </service>
     </services>
 </container>

@@ -14,7 +14,7 @@
             <!-- producer will be set by the extension -->
             <!-- chunk size will be set by the extension -->
             <!-- routing key will be set by the extension -->
-            <!-- logger will be set by the extension -->
+            <tag name="monolog.logger" channel="en_marche_mailer"/>
         </service>
         <service id="en_marche_mailer.mailer.transporter.default" alias="en_marche_mailer.mailer.transporter.amqp" public="false" />
         <service id="EnMarche\MailerBundle\Mailer\TransporterInterface" alias="en_marche_mailer.mailer.transporter.default" public="false" />

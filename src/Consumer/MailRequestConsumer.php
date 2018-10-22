@@ -12,25 +12,27 @@ use EnMarche\MailerBundle\Repository\MailRequestRepository;
 use GuzzleHttp\Exception\GuzzleException;
 use OldSound\RabbitMqBundle\RabbitMq\ConsumerInterface;
 use PhpAmqpLib\Message\AMQPMessage;
-use Psr\Log\LoggerInterface;
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\LoggerAwareTrait;
+use Psr\Log\NullLogger;
 
-class MailRequestConsumer implements ConsumerInterface
+class MailRequestConsumer implements ConsumerInterface, LoggerAwareInterface
 {
+    use LoggerAwareTrait;
+
     private $mailRequestRepository;
     private $entityManager;
     private $mailClientsRegistry;
-    private $logger;
 
     public function __construct(
         MailRequestRepository $mailRequestRepository,
         EntityManagerInterface $entityManager,
-        MailClientsRegistryInterface $mailClientRegistry,
-        LoggerInterface $logger
+        MailClientsRegistryInterface $mailClientRegistry
     ) {
         $this->mailRequestRepository = $mailRequestRepository;
         $this->entityManager = $entityManager;
         $this->mailClientsRegistry = $mailClientRegistry;
-        $this->logger = $logger;
+        $this->logger = new NullLogger();
     }
 
     /**
@@ -90,6 +92,6 @@ class MailRequestConsumer implements ConsumerInterface
 
     private function getMailClient(MailRequestInterface $mailRequest): MailClientInterface
     {
-        return $this->mailClientsRegistry->getClientForMailRequest($mailRequest);
+        return $this->mailClientsRegistry->getClientForMailType($mailRequest->getType());
     }
 }

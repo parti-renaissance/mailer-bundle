@@ -7,21 +7,24 @@ use EnMarche\MailerBundle\Mail\Mail;
 use EnMarche\MailerBundle\Mail\MailInterface;
 use EnMarche\MailerBundle\Mailer\TransporterInterface;
 use OldSound\RabbitMqBundle\RabbitMq\ProducerInterface;
-use Psr\Log\LoggerInterface;
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\LoggerAwareTrait;
+use Psr\Log\NullLogger;
 
-class AmqpMailTransporter implements TransporterInterface
+class AmqpMailTransporter implements TransporterInterface, LoggerAwareInterface
 {
+    use LoggerAwareTrait;
+
     private $producer;
     private $chunkSize;
     private $routingKeyPrefix;
-    private $logger;
 
-    public function __construct(ProducerInterface $producer, int $chunkSize = Mail::DEFAULT_CHUNK_SIZE, string $routingKeyPrefix = 'em_mails', LoggerInterface $logger = null)
+    public function __construct(ProducerInterface $producer, int $chunkSize = Mail::DEFAULT_CHUNK_SIZE, string $routingKeyPrefix = 'em_mails')
     {
         $this->producer = $producer;
         $this->chunkSize = $chunkSize;
         $this->routingKeyPrefix = $routingKeyPrefix;
-        $this->logger = $logger;
+        $this->logger = new NullLogger();
     }
 
     public function transport(MailInterface $mail): void

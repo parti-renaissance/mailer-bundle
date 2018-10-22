@@ -2,6 +2,7 @@
 
 namespace EnMarche\MailerBundle\Consumer;
 
+use Doctrine\Common\Persistence\ObjectManager;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
 use EnMarche\MailerBundle\Client\MailRequestFactoryInterface;
@@ -10,7 +11,8 @@ use EnMarche\MailerBundle\Mail\MailInterface;
 use OldSound\RabbitMqBundle\RabbitMq\ConsumerInterface;
 use OldSound\RabbitMqBundle\RabbitMq\ProducerInterface;
 use PhpAmqpLib\Message\AMQPMessage;
-use Psr\Log\LoggerInterface;
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\LoggerAwareTrait;
 use Psr\Log\NullLogger;
 
 /**
@@ -18,26 +20,26 @@ use Psr\Log\NullLogger;
  *
  * The consumer re routes an id from data using a ProducerInterface.
  */
-class MailConsumer implements ConsumerInterface
+class MailConsumer implements ConsumerInterface, LoggerAwareInterface
 {
+    use LoggerAwareTrait;
+
     private $producer;
     private $routingKeyPrefix;
     private $entityManager;
     private $mailRequestFactory;
-    private $logger;
 
     public function __construct(
         ProducerInterface $producer,
         string $routingKeyPrefix,
-        EntityManagerInterface $entityManager,
-        MailRequestFactoryInterface $mailRequestFactory,
-        LoggerInterface $logger = null
+        ObjectManager $entityManager,
+        MailRequestFactoryInterface $mailRequestFactory
     ) {
         $this->producer = $producer;
         $this->routingKeyPrefix = $routingKeyPrefix;
         $this->entityManager = $entityManager;
         $this->mailRequestFactory = $mailRequestFactory;
-        $this->logger = $logger ?: new NullLogger();
+        $this->logger = new NullLogger();
     }
 
     /**
