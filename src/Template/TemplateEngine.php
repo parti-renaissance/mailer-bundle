@@ -1,10 +1,10 @@
 <?php
 
-namespace EnMarche\MailerBundle\TemplateSynchronizer;
+namespace EnMarche\MailerBundle\Template;
 
 use Twig\Environment as TwigEnvironment;
 
-class TemplateService
+class TemplateEngine
 {
     private $twig;
 

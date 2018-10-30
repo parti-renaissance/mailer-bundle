@@ -7,6 +7,7 @@ use EnMarche\MailerBundle\Client\MailClientsRegistryInterface;
 use EnMarche\MailerBundle\Entity\Template;
 use EnMarche\MailerBundle\Entity\TemplateVersion;
 use EnMarche\MailerBundle\Repository\TemplateRepository;
+use EnMarche\MailerBundle\Template\Synchronization\SynchronizerRegistry;
 use OldSound\RabbitMqBundle\RabbitMq\ConsumerInterface;
 use PhpAmqpLib\Message\AMQPMessage;
 use Psr\Log\LoggerAwareInterface;
@@ -18,17 +19,17 @@ class MailTemplateSyncConsumer implements ConsumerInterface, LoggerAwareInterfac
     use LoggerAwareTrait;
 
     private $manager;
-    private $mailClientRegistry;
     private $templateRepository;
+    private $synchronizerRegistry;
 
     public function __construct(
         ObjectManager $manager,
         TemplateRepository $templateRepository,
-        MailClientsRegistryInterface $clientsRegistry
+        SynchronizerRegistry $synchronizerRegistry
     ) {
         $this->manager = $manager;
         $this->templateRepository = $templateRepository;
-        $this->mailClientRegistry = $clientsRegistry;
+        $this->synchronizerRegistry = $synchronizerRegistry;
         $this->logger = new NullLogger();
     }
 
@@ -67,10 +68,12 @@ class MailTemplateSyncConsumer implements ConsumerInterface, LoggerAwareInterfac
             $template->setLastVersion(new TemplateVersion($hash));
         }
 
-        $client = $this->mailClientRegistry->getClientForMailType($template->getMailType());
-        dump($client);
+        $this->synchronizerRegistry
+            ->getSynchronizerByMailType($template->getMailType())
+            ->sync($template)
+        ;
         exit;
-        //return ConsumerInterface::MSG_ACK;
+        return ConsumerInterface::MSG_ACK;
     }
 
     private function validateMessage(array $data): bool

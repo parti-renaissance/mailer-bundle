@@ -2,6 +2,7 @@
 
 namespace EnMarche\MailerBundle\Client;
 
+use EnMarche\MailerBundle\Client\PayloadFactory\Mail\PayloadFactoryInterface;
 use EnMarche\MailerBundle\Exception\InvalidMailResponseException;
 use GuzzleHttp\ClientInterface;
 

@@ -2,7 +2,6 @@
 
 namespace EnMarche\MailerBundle\DependencyInjection;
 
-use EnMarche\MailerBundle\Client\PayloadFactory\PayloadType;
 use EnMarche\MailerBundle\Mail\Mail;
 use EnMarche\MailerBundle\Mailer\Transporter\TransporterType;
 use Symfony\Component\Config\Definition\Builder\ArrayNodeDefinition;
@@ -194,7 +193,11 @@ class Configuration implements ConfigurationInterface
      */
     private function addMailApiSection(ArrayNodeDefinition $rootNode): void
     {
-        $mailApiNode = $rootNode->children()->arrayNode('mail_api');
+        $mailApiNode = $rootNode
+            ->children()
+            ->arrayNode('mail_api')
+            ->canBeEnabled()
+        ;
 
         $this->addMailApiHttpClientsSection($mailApiNode);
         $this->addMailApiTemplatesSyncSection($mailApiNode);
@@ -211,6 +214,7 @@ class Configuration implements ConfigurationInterface
                     ->defaultFalse()
                 ->end()
                 ->arrayNode('mail_templates')
+                    ->canBeEnabled()
                     ->children()
                         ->scalarNode('routing_key')
                             ->defaultValue('em_mails.templates_sync')
@@ -280,6 +284,7 @@ class Configuration implements ConfigurationInterface
                     ->requiresAtLeastOneElement()
                     ->arrayPrototype()
                         ->children()
+                            ->scalarNode('api_type')->end()
                             ->booleanNode('abstract')->defaultFalse()->end()
                             ->scalarNode('from')->end()
                             ->scalarNode('public_api_key')->end()
@@ -304,30 +309,30 @@ class Configuration implements ConfigurationInterface
 
     private function addMailApiTemplatesSyncSection(ArrayNodeDefinition $mailApiNode)
     {
-        $mailApiNode
-            ->children()
-                ->arrayNode('templates_sync')
-                    ->children()
-                        ->arrayNode('http_clients')
-                            ->isRequired()
-                            ->useAttributeAsKey('mail_api_client')
-                            ->requiresAtLeastOneElement()
-                            ->arrayPrototype()
-                                ->children()
-                                    ->scalarNode('from')->end()
-                                    ->scalarNode('private_api_key')->end()
-                                    ->scalarNode('private_api_key')->end()
-                                    ->arrayNode('options')
-                                        ->variablePrototype()
-                                            ->info('See the "config" key of CSA Guzzle clients configuration.')
-                                        ->end()
-                                    ->end()
-                                ->end()
-                            ->end()
-                        ->end()
-                    ->end()
-                ->end()
-            ->end()
-        ;
+//        $mailApiNode
+//            ->children()
+//                ->arrayNode('templates_sync')
+//                    ->children()
+//                        ->arrayNode('http_clients')
+//                            ->isRequired()
+//                            ->useAttributeAsKey('mail_api_client')
+//                            ->requiresAtLeastOneElement()
+//                            ->arrayPrototype()
+//                                ->children()
+//                                    ->scalarNode('from')->end()
+//                                    ->scalarNode('private_api_key')->end()
+//                                    ->scalarNode('private_api_key')->end()
+//                                    ->arrayNode('options')
+//                                        ->variablePrototype()
+//                                            ->info('See the "config" key of CSA Guzzle clients configuration.')
+//                                        ->end()
+//                                    ->end()
+//                                ->end()
+//                            ->end()
+//                        ->end()
+//                    ->end()
+//                ->end()
+//            ->end()
+//        ;
     }
 }

@@ -3,7 +3,6 @@
 namespace EnMarche\MailerBundle\Client\PayloadFactory;
 
 use EnMarche\MailerBundle\Client\MailRequestInterface;
-use EnMarche\MailerBundle\Client\PayloadFactoryInterface;
 
 abstract class AbstractPayloadFactory implements PayloadFactoryInterface
 {

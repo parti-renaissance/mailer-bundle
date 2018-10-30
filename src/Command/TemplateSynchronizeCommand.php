@@ -2,9 +2,9 @@
 
 namespace EnMarche\MailerBundle\Command;
 
-use EnMarche\MailerBundle\TemplateSynchronizer\Finder\MailClassFinder;
-use EnMarche\MailerBundle\TemplateSynchronizer\Finder\TemplateFinder;
-use EnMarche\MailerBundle\TemplateSynchronizer\Manager;
+use EnMarche\MailerBundle\Template\Synchronization\Finder\MailClassFinder;
+use EnMarche\MailerBundle\Template\Synchronization\Finder\TemplateFinder;
+use EnMarche\MailerBundle\Template\Synchronization\SyncRequestDispatcher;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use Psr\Log\NullLogger;
@@ -22,18 +22,18 @@ class TemplateSynchronizeCommand extends Command implements LoggerAwareInterface
 
     /** @var SymfonyStyle */
     private $io;
-    /** @var Manager */
-    private $manager;
+    /** @var SyncRequestDispatcher */
+    private $syncRequestDispatcher;
 
     private $templatePaths;
     private $mailClassPaths;
 
-    public function __construct(array $mailClassPaths, array $templatePaths, Manager $manager) {
+    public function __construct(array $mailClassPaths, array $templatePaths, SyncRequestDispatcher $syncRequestDispatcher) {
         parent::__construct();
 
         $this->templatePaths = $templatePaths;
         $this->mailClassPaths = $mailClassPaths;
-        $this->manager = $manager;
+        $this->syncRequestDispatcher = $syncRequestDispatcher;
     }
 
     protected function configure()
@@ -83,7 +83,7 @@ class TemplateSynchronizeCommand extends Command implements LoggerAwareInterface
 
             $reflection = new \ReflectionClass($files[0]['classes'][0]);
 
-            $this->manager->sync($files[0]['file'], $reflection->getName(), $reflection->getDefaultProperties()['type']);
+            $this->syncRequestDispatcher->dispatchRequest($files[0]['file'], $reflection->getName(), $reflection->getDefaultProperties()['type']);
         }
     }
 

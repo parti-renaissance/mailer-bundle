@@ -6,7 +6,6 @@ use Doctrine\Common\Persistence\ObjectManager;
 use EnMarche\MailerBundle\Client\MailClient;
 use EnMarche\MailerBundle\Client\MailClientsRegistryInterface;
 use EnMarche\MailerBundle\Client\MailRequestFactoryInterface;
-use EnMarche\MailerBundle\Client\PayloadFactory\PayloadType;
 use EnMarche\MailerBundle\Command\TemplateSynchronizeCommand;
 use EnMarche\MailerBundle\Consumer\MailConsumer;
 use EnMarche\MailerBundle\Consumer\MailRequestConsumer;
@@ -21,10 +20,10 @@ use EnMarche\MailerBundle\Mail\MailFactory;
 use EnMarche\MailerBundle\Mail\MailFactoryInterface;
 use EnMarche\MailerBundle\Mailer\MailerInterface;
 use EnMarche\MailerBundle\Mailer\Transporter\TransporterType;
-use EnMarche\MailerBundle\Repository\AddressRepository;
 use EnMarche\MailerBundle\Repository\MailRequestRepository;
-use EnMarche\MailerBundle\Repository\MailVarsRepository;
-use EnMarche\MailerBundle\TemplateSynchronizer\Manager;
+use EnMarche\MailerBundle\Template\Synchronization\SynchronizerDecorator;
+use EnMarche\MailerBundle\Template\Synchronization\SynchronizerRegistry;
+use EnMarche\MailerBundle\Template\Synchronization\SyncRequestDispatcher;
 use EnMarche\MailerBundle\Test\DebugMailPost;
 use EnMarche\MailerBundle\MailPost\MailPost;
 use EnMarche\MailerBundle\MailPost\MailPostInterface;
@@ -44,6 +43,7 @@ class EnMarcheMailerExtension extends Extension implements PrependExtensionInter
     private $debug;
     private $databaseConnexion;
     private $doctrineConfigured = false;
+    private $httpClients = [];
 
     public function getAnnotatedClassesToCompile()
     {
@@ -81,12 +81,12 @@ class EnMarcheMailerExtension extends Extension implements PrependExtensionInter
                     $config['mail_aggregator']['routing_keys']
                 );
             }
-            if (isset($config['mail_api_proxy'])) {
+            if (isset($config['mail_api']['proxy'])) {
                 $amqpConfig['consumers']['en_marche_mailer_mail_request'] = $this->createAMQPConsumerConfiguration(
                     $amqpConnexion,
                     'en_marche_mailer_mail_requests',
                     MailRequestConsumer::class,
-                    $config['mail_api_proxy']['routing_keys']
+                    $config['mail_api']['proxy']['routing_keys']
                 );
 
                 if ($config['mail_templates_sync'] === true) {
@@ -105,18 +105,48 @@ class EnMarcheMailerExtension extends Extension implements PrependExtensionInter
             $container->prependExtensionConfig('old_sound_rabbit_mq', $amqpConfig);
         }
 
-        if (!empty($config['mail_api_proxy']) && $this->checkKernelHasBundle($container, 'CsaGuzzleBundle')) {
+        if (!empty($config['mail_api']) && $this->checkKernelHasBundle($container, 'CsaGuzzleBundle')) {
+            $httpClientConfigs = [];
+
+            foreach ($config['mail_api']['http_clients'] as $clientName => $httpClientConfig) {
+                $httpClientConfigs[$clientName] = $httpClientConfig;
+            }
+
+            foreach ($config['mail_api']['proxy']['http_clients'] as $mailRequestType => $httpClientConfig) {
+                $httpClientConfigs[$mailRequestType] = $httpClientConfig;
+            }
+
+            $resolveFromConfigCallback = function (array $config) use (& $resolveFromConfigCallback, $httpClientConfigs): array {
+                if (!isset($config['from'])) {
+                    return $config;
+                }
+
+                if (!isset($httpClientConfigs[$config['from']])) {
+                    throw new \LogicException(sprintf('The http client with name "%s" does not exist', $config['from']));
+                }
+
+                return array_merge_recursive($resolveFromConfigCallback($httpClientConfigs[$config['from']]), $config);
+            };
+
             $guzzleConfig = [];
 
-            foreach ($config['mail_api_proxy']['http_clients'] as $mailRequestType => $httpClientConfig) {
-                $httpClientName = "en_marche_mailer_$mailRequestType";
-                $auth = ['auth' => [$httpClientConfig['public_api_key'], $httpClientConfig['private_api_key']]];
-                $preset = PayloadType::API_SETTINGS_MAP[$httpClientConfig['api_type']] ?? [];
+            foreach ($httpClientConfigs as $clientName => $httpClientConfig) {
+                if (isset($httpClientConfig['abstract']) && $httpClientConfig['abstract'] === true) {
+                    continue;
+                }
 
-                unset($httpClientConfig['api_type'], $httpClientConfig['public_api_key'], $httpClientConfig['private_api_key']);
+                $this->httpClients[$clientName] = $httpClientConfig = $resolveFromConfigCallback($httpClientConfig);
+
+                $httpClientName = "en_marche_mailer_$clientName";
+
+                $auth = [];
+                if (isset($httpClientConfig['public_api_key'], $httpClientConfig['private_api_key'])) {
+                    $auth = ['auth' => [$httpClientConfig['public_api_key'], $httpClientConfig['private_api_key']]];
+                    unset($httpClientConfig['public_api_key'], $httpClientConfig['private_api_key']);
+                }
 
                 $guzzleConfig['clients'][$httpClientName] = [
-                    'config' => \array_merge($preset, $httpClientConfig['options'], $auth),
+                    'config' => \array_merge($httpClientConfig['options'], $auth),
                 ];
             }
 
@@ -178,11 +208,11 @@ class EnMarcheMailerExtension extends Extension implements PrependExtensionInter
         if (isset($config['mail_aggregator'])) {
             $this->registerMailAggregatorConfiguration($config['mail_aggregator'], $container, $loader);
         }
-        if (isset($config['mail_api_proxy'])) {
-            $this->registerMailApiProxyConfiguration($config['mail_api_proxy'], $container, $loader);
+        if (isset($config['mail_api']['proxy'])) {
+            $this->registerMailApiProxyConfiguration($config['mail_api']['proxy'], $container, $loader);
         }
         if ($config['mail_templates_sync'] === true) {
-            $loader->load('mail_templates_sync.xml');
+            $this->registerTemplateSyncConfiguration($container, $loader);
         }
     }
 
@@ -285,7 +315,7 @@ class EnMarcheMailerExtension extends Extension implements PrependExtensionInter
         $this->loadDoctrineConfig($loader);
         $mailClients = [];
 
-        foreach ($config['http_clients'] as $httpClientName => $httpClientConfig) {
+        foreach ($this->httpClients as $httpClientName => $httpClientConfig) {
             $payloadFactoryServiceId = 'en_marche_mailer.client.payload_factory.'.$httpClientConfig['api_type'];
 
             if (!$container->hasDefinition($payloadFactoryServiceId)) {
@@ -299,8 +329,8 @@ class EnMarcheMailerExtension extends Extension implements PrependExtensionInter
             if (isset($httpClientConfig['sender']['email']) || $httpClientConfig['sender']['name']) {
                 $container
                     ->findDefinition($payloadFactoryServiceId)
-                    ->setArgument(0, $httpClientConfig['sender']['email'] ?? null)
-                    ->setArgument(1, $httpClientConfig['sender']['name'] ?? null)
+                    ->addArgument($httpClientConfig['sender']['email'] ?? null)
+                    ->addArgument($httpClientConfig['sender']['name'] ?? null)
                 ;
 
                 if (isset($httpClientConfig['sender']['email'])) {
@@ -313,7 +343,8 @@ class EnMarcheMailerExtension extends Extension implements PrependExtensionInter
             }
 
             $mailClientId = \sprintf('en_marche_mailer.%s_mail_client', $httpClientName);
-            $container->register($mailClientId, MailClient::class)
+            $container
+                ->register($mailClientId, MailClient::class)
                 ->addArgument(new Reference("csa_guzzle.client.en_marche_mailer_$httpClientName"))
                 ->addArgument(new Reference($payloadFactoryServiceId))
                 ->setPublic(false)
@@ -322,19 +353,24 @@ class EnMarcheMailerExtension extends Extension implements PrependExtensionInter
             $mailClients[$httpClientName] = new Reference($mailClientId);
         }
 
-        $container->findDefinition(MailClientsRegistryInterface::class)
+        $container
+            ->findDefinition(MailClientsRegistryInterface::class)
             ->addArgument(ServiceLocatorTagPass::register($container, $mailClients))
         ;
 
         $container->getDefinition(MailRequestConsumer::class)
-            ->setArgument(0, new Reference(MailRequestRepository::class))
-            ->setArgument(1, new Reference('doctrine.orm.en_marche_mailer_entity_manager'))
-            ->setArgument(2, new Reference(MailClientsRegistryInterface::class))
+            ->addArgument(new Reference(MailRequestRepository::class))
+            ->addArgument(new Reference('doctrine.orm.en_marche_mailer_entity_manager'))
+            ->addArgument(new Reference(MailClientsRegistryInterface::class))
         ;
     }
 
     private function registerMailTemplateConfiguration(array $config, string $appName, ContainerBuilder $container, XmlFileLoader $loader): void
     {
+        if (!$this->isConfigEnabled($container, $config)) {
+            return;
+        }
+
         $loader->load('mail_templates.xml');
 
         $container
@@ -344,7 +380,7 @@ class EnMarcheMailerExtension extends Extension implements PrependExtensionInter
         ;
 
         $container
-            ->findDefinition(Manager::class)
+            ->findDefinition(SyncRequestDispatcher::class)
             ->setArgument(1, new Reference('old_sound_rabbit_mq.en_marche_mailer_mail_templates_sync_producer'))
             ->setArgument(2, $appName)
         ;
@@ -412,5 +448,39 @@ class EnMarcheMailerExtension extends Extension implements PrependExtensionInter
         $loader->load('doctrine.xml');
 
         $this->doctrineConfigured = true;
+    }
+
+    private function registerTemplateSyncConfiguration(ContainerBuilder $container, XmlFileLoader $loader)
+    {
+        $loader->load('mail_templates_sync.xml');
+
+        $synchronizers = [];
+
+        foreach ($this->httpClients as $mailType => $config) {
+            $synchronizerServiceId = 'en_marche_mailer.template.synchronizer.'.$config['api_type'];
+
+            if (!$container->has($synchronizerServiceId)) {
+                throw new InvalidPayloadTypeException(sprintf('The service "%s" does not exist', $synchronizerServiceId));
+            }
+
+            $container
+                ->findDefinition($synchronizerServiceId)
+                ->addArgument(new Reference("csa_guzzle.client.en_marche_mailer_$mailType"))
+            ;
+
+            $synchronizerDecoratorId = sprintf('en_marche_mailer.%s_template_synchronizer', $mailType);
+            $container
+                ->register($synchronizerDecoratorId, SynchronizerDecorator::class)
+                ->addArgument(new Reference($synchronizerServiceId))
+                ->setPublic(false)
+            ;
+            // The client name is equivalent to a mail request type here
+            $synchronizers[$mailType] = new Reference($synchronizerDecoratorId);
+        }
+
+        $container
+            ->findDefinition(SynchronizerRegistry::class)
+            ->addArgument(ServiceLocatorTagPass::register($container, $synchronizers))
+        ;
     }
 }

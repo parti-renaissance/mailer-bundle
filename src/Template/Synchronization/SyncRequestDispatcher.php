@@ -1,23 +1,24 @@
 <?php
 
-namespace EnMarche\MailerBundle\TemplateSynchronizer;
+namespace EnMarche\MailerBundle\Template\Synchronization;
 
+use EnMarche\MailerBundle\Template\TemplateEngine;
 use OldSound\RabbitMqBundle\RabbitMq\ProducerInterface;
 
-class Manager
+class SyncRequestDispatcher
 {
     private $templateEngine;
     private $producer;
     private $appName;
 
-    public function __construct(TemplateService $engine, ProducerInterface $producer, string $appName)
+    public function __construct(TemplateEngine $engine, ProducerInterface $producer, string $appName)
     {
         $this->templateEngine = $engine;
         $this->producer = $producer;
         $this->appName = $appName;
     }
 
-    public function sync(string $templatePath, string $mailClassName, string $mailType): void
+    public function dispatchRequest(string $templatePath, string $mailClassName, string $mailType): void
     {
         $mailBody = $this->templateEngine->renderBody($templatePath);
         $mailSubject = $this->templateEngine->renderSubject($templatePath);

@@ -1,6 +1,6 @@
 <?php
 
-namespace EnMarche\MailerBundle\TemplateSynchronizer\Finder;
+namespace EnMarche\MailerBundle\Template\Synchronization\Finder;
 
 use EnMarche\MailerBundle\Mail\MailInterface;
 use Symfony\Component\Finder\Finder;
