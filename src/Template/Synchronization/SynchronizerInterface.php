@@ -1,6 +1,6 @@
 <?php
 
-namespace EnMarche\MailerBundle\Template\Synchronization\Synchronizer;
+namespace EnMarche\MailerBundle\Template\Synchronization;
 
 use EnMarche\MailerBundle\Entity\Template;
 

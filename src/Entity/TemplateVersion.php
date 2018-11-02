@@ -16,7 +16,7 @@ class TemplateVersion
      *
      * @ORM\Column(type="integer", options={"unsigned": true})
      * @ORM\Id
-     * @ORM\GeneratedValue(strategy="IDENTITY")
+     * @ORM\GeneratedValue(strategy="AUTO")
      */
     private $id;
 
@@ -24,24 +24,30 @@ class TemplateVersion
      * @var UuidInterface
      *
      * @ORM\Column(type="uuid")
-     * @ORM\GeneratedValue(strategy="UUID")
      */
     private $uuid;
 
     /**
-     * @var Template
+     * @var string
      *
-     * @ORM\ManyToOne(targetEntity="EnMarche\MailerBundle\Entity\Template", inversedBy="versions")
-     * @ORM\JoinColumn(nullable=false)
+     * @ORM\Column(type="text")
      */
-    private $template;
+    private $body;
 
     /**
      * @var string
      *
-     * @ORM\Column
+     * @ORM\Column(type="text")
      */
-    private $hash;
+    private $subject;
+
+    /**
+     * @var Template
+     *
+     * @ORM\ManyToOne(targetEntity="EnMarche\MailerBundle\Entity\Template", inversedBy="versions", cascade={"all"})
+     * @ORM\JoinColumn(nullable=false)
+     */
+    private $template;
 
     /**
      * @var \DateTime
@@ -50,9 +56,11 @@ class TemplateVersion
      */
     private $createdAt;
 
-    public function __construct(string $hash)
+    public function __construct(UuidInterface $uuid, string $body, string $subject)
     {
-        $this->hash = $hash;
+        $this->uuid = $uuid;
+        $this->body = $body;
+        $this->subject = $subject;
         $this->createdAt = new \DateTime();
     }
 
@@ -66,6 +74,16 @@ class TemplateVersion
         return $this->uuid;
     }
 
+    public function getBody(): string
+    {
+        return $this->body;
+    }
+
+    public function getSubject(): string
+    {
+        return $this->subject;
+    }
+
     public function getTemplate(): Template
     {
         return $this->template;
@@ -73,7 +91,7 @@ class TemplateVersion
 
     public function getHash(): string
     {
-        return $this->hash;
+        return hash('sha256', $this->body . $this->subject);
     }
 
     public function getCreatedAt(): \DateTime

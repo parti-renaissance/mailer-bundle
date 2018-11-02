@@ -2,17 +2,19 @@
 
 namespace EnMarche\MailerBundle\Consumer;
 
+use AppBundle\Mail\Transactional\DonationMail;
 use Doctrine\Common\Persistence\ObjectManager;
-use EnMarche\MailerBundle\Client\MailClientsRegistryInterface;
 use EnMarche\MailerBundle\Entity\Template;
 use EnMarche\MailerBundle\Entity\TemplateVersion;
+use EnMarche\MailerBundle\Exception\TemplateSyncHttpException;
 use EnMarche\MailerBundle\Repository\TemplateRepository;
-use EnMarche\MailerBundle\Template\Synchronization\SynchronizerRegistry;
+use EnMarche\MailerBundle\Template\Synchronization\SynchronizerRegistryInterface;
 use OldSound\RabbitMqBundle\RabbitMq\ConsumerInterface;
 use PhpAmqpLib\Message\AMQPMessage;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use Psr\Log\NullLogger;
+use Ramsey\Uuid\Uuid;
 
 class MailTemplateSyncConsumer implements ConsumerInterface, LoggerAwareInterface
 {
@@ -25,7 +27,7 @@ class MailTemplateSyncConsumer implements ConsumerInterface, LoggerAwareInterfac
     public function __construct(
         ObjectManager $manager,
         TemplateRepository $templateRepository,
-        SynchronizerRegistry $synchronizerRegistry
+        SynchronizerRegistryInterface $synchronizerRegistry
     ) {
         $this->manager = $manager;
         $this->templateRepository = $templateRepository;
@@ -37,8 +39,8 @@ class MailTemplateSyncConsumer implements ConsumerInterface, LoggerAwareInterfac
     {
         $data = json_decode($msg->body, true);
 
-        if (!$this->validateMessage($data)) {
-            $this->logger->error('Invalid message. Expected positive integer.', ['message' => $msg->body]);
+        if (!is_array($data) || !$this->validateMessage($data)) {
+            $this->logger->error('Invalid message.', ['message' => $msg->body]);
 
             return ConsumerInterface::MSG_REJECT;
         }
@@ -51,28 +53,40 @@ class MailTemplateSyncConsumer implements ConsumerInterface, LoggerAwareInterfac
             'body' => $body,
         ] = $data;
 
-        $hash = $this->calculateContentHash($subject, $body);
+        $body = base64_decode($body);
+        $subject = base64_decode($subject);
+
+        $version = new TemplateVersion(Uuid::uuid4(), $body, $subject);
 
         // If the template not found, then create a new one
         if (null === $template = $this->findTemplate($appName, $mailClass)) {
             $template = new Template($appName, $mailClass, $mailType);
-            $template->setLastVersion(new TemplateVersion($hash));
+            $template->addVersion($version);
 
             $this->manager->persist($template);
         } else {
             // If the same hash, then not need to re sync the current template
-            if ($template->getLastVersion()->getHash() === $hash) {
+            if ($template->getLastVersion()->getHash() === $version->getHash()) {
                 return ConsumerInterface::MSG_ACK;
             }
 
-            $template->setLastVersion(new TemplateVersion($hash));
+            $template->addVersion($version);
         }
 
-        $this->synchronizerRegistry
-            ->getSynchronizerByMailType($template->getMailType())
-            ->sync($template)
-        ;
-        exit;
+        //$this->manager->persist($version);
+        $this->manager->flush();
+
+        try {
+            $this->synchronizerRegistry
+                ->getSynchronizerByMailType($template->getMailType())
+                ->sync($template)
+            ;
+        } catch (TemplateSyncHttpException $e) {
+            $this->logger->error($e->getMessage());
+
+            return ConsumerInterface::MSG_REJECT_REQUEUE;
+        }
+
         return ConsumerInterface::MSG_ACK;
     }
 
@@ -84,10 +98,5 @@ class MailTemplateSyncConsumer implements ConsumerInterface, LoggerAwareInterfac
     private function findTemplate($appName, $mailClass): ?Template
     {
         return $this->templateRepository->findOne($appName, $mailClass);
-    }
-
-    private function calculateContentHash(string $subject, string $body): string
-    {
-        return hash('sha256', base64_decode($subject) . base64_decode($body));
     }
 }

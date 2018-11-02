@@ -375,8 +375,8 @@ class EnMarcheMailerExtension extends Extension implements PrependExtensionInter
 
         $container
             ->findDefinition(TemplateSynchronizeCommand::class)
-            ->addArgument($config['mail_class_paths'])
-            ->addArgument($config['template_paths'])
+            ->setArgument(0, $config['mail_class_paths'])
+            ->setArgument(1, $config['template_paths'])
         ;
 
         $container

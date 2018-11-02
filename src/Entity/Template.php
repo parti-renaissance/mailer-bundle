@@ -19,7 +19,7 @@ class Template
      *
      * @ORM\Column(type="integer", options={"unsigned": true})
      * @ORM\Id
-     * @ORM\GeneratedValue(strategy="IDENTITY")
+     * @ORM\GeneratedValue(strategy="AUTO")
      */
     private $id;
 
@@ -51,13 +51,6 @@ class Template
      * @ORM\JoinColumn(onDelete="CASCADE")
      */
     private $versions;
-
-    /**
-     * @var TemplateVersion
-     *
-     * @ORM\OneToOne(targetEntity="EnMarche\MailerBundle\Entity\TemplateVersion", fetch="EAGER")
-     */
-    private $lastVersion;
 
     public function __construct(string $appName, string $mailClass, string $mailType)
     {
@@ -105,13 +98,12 @@ class Template
         $this->versions->removeElement($version);
     }
 
-    public function setLastVersion(TemplateVersion $version): void
+    public function getLastVersion(): ?TemplateVersion
     {
-        $this->addVersion($this->lastVersion = $version);
-    }
+        if ($this->versions->isEmpty()) {
+            return null;
+        }
 
-    public function getLastVersion(): TemplateVersion
-    {
-        return $this->lastVersion;
+        return $this->versions->last();
     }
 }

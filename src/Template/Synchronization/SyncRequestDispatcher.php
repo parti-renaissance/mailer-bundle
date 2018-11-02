@@ -2,6 +2,7 @@
 
 namespace EnMarche\MailerBundle\Template\Synchronization;
 
+use AppBundle\Mail\Transactional\DonationMail;
 use EnMarche\MailerBundle\Template\TemplateEngine;
 use OldSound\RabbitMqBundle\RabbitMq\ProducerInterface;
 
@@ -22,6 +23,10 @@ class SyncRequestDispatcher
     {
         $mailBody = $this->templateEngine->renderBody($templatePath);
         $mailSubject = $this->templateEngine->renderSubject($templatePath);
+
+        if ($mailClassName === DonationMail::class) {
+            dump($mailSubject);
+        }
 
         $this->producer->publish(json_encode([
             'app_name' => $this->appName,

@@ -3,7 +3,6 @@
 namespace EnMarche\MailerBundle\Template\Synchronization;
 
 use EnMarche\MailerBundle\Entity\Template;
-use EnMarche\MailerBundle\Template\Synchronization\Synchronizer\SynchronizerInterface;
 
 class SynchronizerDecorator implements SynchronizerInterface
 {
@@ -16,6 +15,6 @@ class SynchronizerDecorator implements SynchronizerInterface
 
     public function sync(Template $template): void
     {
-        return $this->decorated->sync($template);
+        $this->decorated->sync($template);
     }
 }
