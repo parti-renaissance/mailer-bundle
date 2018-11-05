@@ -2,12 +2,10 @@
 
 namespace EnMarche\MailerBundle\Consumer;
 
-use AppBundle\Mail\Transactional\DonationMail;
+use Doctrine\Common\Persistence\ManagerRegistry;
 use Doctrine\Common\Persistence\ObjectManager;
 use EnMarche\MailerBundle\Entity\Template;
 use EnMarche\MailerBundle\Entity\TemplateVersion;
-use EnMarche\MailerBundle\Exception\TemplateSyncHttpException;
-use EnMarche\MailerBundle\Repository\TemplateRepository;
 use EnMarche\MailerBundle\Template\Synchronization\SynchronizerRegistryInterface;
 use OldSound\RabbitMqBundle\RabbitMq\ConsumerInterface;
 use PhpAmqpLib\Message\AMQPMessage;
@@ -20,17 +18,14 @@ class MailTemplateSyncConsumer implements ConsumerInterface, LoggerAwareInterfac
 {
     use LoggerAwareTrait;
 
-    private $manager;
-    private $templateRepository;
+    private $managerRegistry;
     private $synchronizerRegistry;
 
     public function __construct(
-        ObjectManager $manager,
-        TemplateRepository $templateRepository,
+        ManagerRegistry $managerRegistry,
         SynchronizerRegistryInterface $synchronizerRegistry
     ) {
-        $this->manager = $manager;
-        $this->templateRepository = $templateRepository;
+        $this->managerRegistry = $managerRegistry;
         $this->synchronizerRegistry = $synchronizerRegistry;
         $this->logger = new NullLogger();
     }
@@ -58,12 +53,14 @@ class MailTemplateSyncConsumer implements ConsumerInterface, LoggerAwareInterfac
 
         $version = new TemplateVersion(Uuid::uuid4(), $body, $subject);
 
+        $manager = $this->getManager();
+
         // If the template not found, then create a new one
-        if (null === $template = $this->findTemplate($appName, $mailClass)) {
+        if (null === $template = $manager->getRepository(Template::class)->findOne($appName, $mailClass)) {
             $template = new Template($appName, $mailClass, $mailType);
             $template->addVersion($version);
 
-            $this->manager->persist($template);
+            $manager->persist($template);
         } else {
             // If the same hash, then not need to re sync the current template
             if ($template->getLastVersion()->getHash() === $version->getHash()) {
@@ -71,21 +68,23 @@ class MailTemplateSyncConsumer implements ConsumerInterface, LoggerAwareInterfac
             }
 
             $template->addVersion($version);
-            $template->mailType = 'test';
         }
 
-        //$this->manager->persist($version);
-        $this->manager->flush();
+        $manager->flush();
 
         try {
-//            $this->synchronizerRegistry
-//                ->getSynchronizerByMailType($template->getMailType())
-//                ->sync($template)
-//            ;
-        } catch (TemplateSyncHttpException $e) {
-            $this->logger->error($e->getMessage());
+            $this->synchronizerRegistry
+                ->getSynchronizerByMailType($template->getMailType())
+                ->sync($template)
+            ;
+        } catch (\Throwable $e) {
+            $this->logger->error($e->getMessage(), ['exception' => $e]);
+
+            $version->onErrorSynchronization();
 
             return ConsumerInterface::MSG_REJECT_REQUEUE;
+        } finally {
+            $manager->flush();
         }
 
         return ConsumerInterface::MSG_ACK;
@@ -96,8 +95,8 @@ class MailTemplateSyncConsumer implements ConsumerInterface, LoggerAwareInterfac
         return isset($data['app_name'], $data['mail_class'], $data['mail_type'], $data['subject'], $data['body']);
     }
 
-    private function findTemplate($appName, $mailClass): ?Template
+    private function getManager(): ObjectManager
     {
-        return $this->templateRepository->findOne($appName, $mailClass);
+        return $this->managerRegistry->getManagerForClass(Template::class);
     }
 }

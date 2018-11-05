@@ -139,14 +139,16 @@ class EnMarcheMailerExtension extends Extension implements PrependExtensionInter
 
                 $httpClientName = "en_marche_mailer_$clientName";
 
-                $auth = [];
+                $clientDefaultConfig = [
+                    'timeout' => 3,
+                ];
                 if (isset($httpClientConfig['public_api_key'], $httpClientConfig['private_api_key'])) {
-                    $auth = ['auth' => [$httpClientConfig['public_api_key'], $httpClientConfig['private_api_key']]];
+                    $clientDefaultConfig['auth'] = [$httpClientConfig['public_api_key'], $httpClientConfig['private_api_key']];
                     unset($httpClientConfig['public_api_key'], $httpClientConfig['private_api_key']);
                 }
 
                 $guzzleConfig['clients'][$httpClientName] = [
-                    'config' => \array_merge($httpClientConfig['options'], $auth),
+                    'config' => \array_merge($httpClientConfig['options'], $clientDefaultConfig),
                 ];
             }
 

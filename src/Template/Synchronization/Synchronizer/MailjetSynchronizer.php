@@ -12,7 +12,6 @@ class MailjetSynchronizer extends AbstractSynchronizer
 
     public function sync(Template $template): void
     {
-        return;
         $response = $this->apiClient->request(
             'POST',
             self::CREATE_TEMPLATE_ENDPOINT,

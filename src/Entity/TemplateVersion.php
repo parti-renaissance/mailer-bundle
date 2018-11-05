@@ -11,6 +11,10 @@ use Ramsey\Uuid\UuidInterface;
  */
 class TemplateVersion
 {
+    private const SYNC_STATUS_PENDING = 'pending';
+    private const SYNC_STATUS_SUCCESS = 'success';
+    private const SYNC_STATUS_ERROR = 'error';
+
     /**
      * @var int
      *
@@ -56,12 +60,26 @@ class TemplateVersion
      */
     private $createdAt;
 
+    /**
+     * @var \DateTime
+     *
+     * @ORM\Column(type="datetime")
+     */
+    private $updatedAt;
+
+    /**
+     * @var string
+     *
+     * @ORM\Column
+     */
+    private $syncStatus = self::SYNC_STATUS_PENDING;
+
     public function __construct(UuidInterface $uuid, string $body, string $subject)
     {
         $this->uuid = $uuid;
         $this->body = $body;
         $this->subject = $subject;
-        $this->createdAt = new \DateTime();
+        $this->updatedAt = $this->createdAt = new \DateTime();
     }
 
     public function getId(): int
@@ -102,5 +120,17 @@ class TemplateVersion
     public function setTemplate(Template $template): void
     {
         $this->template = $template;
+    }
+
+    public function onSuccessSynchronization(): void
+    {
+        $this->syncStatus = self::SYNC_STATUS_SUCCESS;
+        $this->updatedAt = new \DateTime();
+    }
+
+    public function onErrorSynchronization(): void
+    {
+        $this->syncStatus = self::SYNC_STATUS_SUCCESS;
+        $this->updatedAt = new \DateTime();
     }
 }

@@ -41,7 +41,7 @@ class Template
      *
      * @ORM\Column
      */
-    public $mailType;
+    private $mailType;
 
     /**
      * @var TemplateVersion
