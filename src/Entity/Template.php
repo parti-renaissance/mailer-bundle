@@ -3,7 +3,6 @@
 namespace EnMarche\MailerBundle\Entity;
 
 use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
@@ -42,12 +41,12 @@ class Template
      *
      * @ORM\Column
      */
-    private $mailType;
+    public $mailType;
 
     /**
      * @var TemplateVersion
      *
-     * @ORM\OneToMany(targetEntity="EnMarche\MailerBundle\Entity\TemplateVersion", mappedBy="template", cascade={"persist"})
+     * @ORM\OneToMany(targetEntity="EnMarche\MailerBundle\Entity\TemplateVersion", orphanRemoval=true, mappedBy="template", cascade={"persist"})
      * @ORM\JoinColumn(onDelete="CASCADE")
      */
     private $versions;
@@ -80,9 +79,9 @@ class Template
         return $this->mailType;
     }
 
-    public function getVersions(): Collection
+    public function getVersions(): array
     {
-        return $this->versions;
+        return $this->versions->toArray();
     }
 
     public function addVersion(TemplateVersion $version): void

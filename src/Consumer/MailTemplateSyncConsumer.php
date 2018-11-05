@@ -71,16 +71,17 @@ class MailTemplateSyncConsumer implements ConsumerInterface, LoggerAwareInterfac
             }
 
             $template->addVersion($version);
+            $template->mailType = 'test';
         }
 
         //$this->manager->persist($version);
         $this->manager->flush();
 
         try {
-            $this->synchronizerRegistry
-                ->getSynchronizerByMailType($template->getMailType())
-                ->sync($template)
-            ;
+//            $this->synchronizerRegistry
+//                ->getSynchronizerByMailType($template->getMailType())
+//                ->sync($template)
+//            ;
         } catch (TemplateSyncHttpException $e) {
             $this->logger->error($e->getMessage());
 
