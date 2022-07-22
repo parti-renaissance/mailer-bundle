@@ -2,9 +2,9 @@
 
 namespace EnMarche\MailerBundle\Client;
 
+use EnMarche\MailerBundle\Client\PayloadFactory\Mail\PayloadFactoryInterface;
 use EnMarche\MailerBundle\Exception\InvalidMailResponseException;
 use GuzzleHttp\ClientInterface;
-use Symfony\Component\HttpFoundation\Request;
 
 class MailClient implements MailClientInterface
 {
@@ -31,9 +31,13 @@ class MailClient implements MailClientInterface
             $mailRequest->prepare($requestPayload);
         }
 
-        $response = $this->client->request(Request::METHOD_POST, '', [
-            'body' => json_encode($requestPayload),
-        ]);
+        $response = $this->client->request(
+            'POST',
+            $this->payloadFactory->getSendEndpoint(),
+            [
+                'body' => json_encode($requestPayload),
+            ]
+        );
 
         if ($response->getStatusCode() >= 300) {
             throw new InvalidMailResponseException($mailRequest, $response);

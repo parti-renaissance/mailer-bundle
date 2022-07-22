@@ -1,0 +1,20 @@
+<?xml version="1.0" ?>
+<container xmlns="http://symfony.com/schema/dic/services"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+    <services>
+        <service id="EnMarche\MailerBundle\Command\TemplateSynchronizeCommand">
+            <argument key="$syncRequestDispatcher" type="service" id="EnMarche\MailerBundle\Template\Synchronization\SyncRequestDispatcher" />
+            <tag name="console.command" />
+            <tag name="monolog.logger" channel="en_marche_mailer" />
+        </service>
+
+        <service id="EnMarche\MailerBundle\Template\Synchronization\SyncRequestDispatcher">
+            <argument type="service" id="EnMarche\MailerBundle\Template\TemplateEngine"/>
+        </service>
+
+        <service id="EnMarche\MailerBundle\Template\TemplateEngine">
+            <argument type="service" id="twig"/>
+        </service>
+    </services>
+</container>

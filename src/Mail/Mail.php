@@ -137,27 +137,22 @@ class Mail implements MailInterface
             return $this->templateName;
         }
 
-        $parts = \explode('\\', static::class);
+        return $this->templateName = $this->app.'_'.self::generateTemplateName();
+    }
 
-        return $this->templateName = $this->app.'_'.\preg_replace_callback(
-            '/(^|[a-z])([A-Z]+)([a-z])?/',
-            function (array $matches) {
-                if (\strlen($matches[2]) > 1 && isset($matches[3]) && \strlen($matches[3]) > 0) {
-                    // we need to keep the last cap for the following part, i.e: xxxHTMLFormXxx => xxx_html_form_xxx
-                    $lowerCaps = \substr($matches[2], 0, -1);
+    /**
+     * Transforms the mail class name from `CamelCase` to `snake_case` and remove Mail word from the end
+     */
+    public static function generateTemplateName(): string
+    {
+        $parts = explode('\\', static::class);
 
-                    return \strtolower(\sprintf(
-                        '%s_%s',
-                        0 === \strlen($matches[1]) ? $lowerCaps : "{$matches[1]}_$lowerCaps",
-                        \substr($matches[2], -1).$matches[3]
-                    ));
-                }
-
-                return \strtolower(
-                    (0 === \strlen($matches[1]) ? $matches[2] : "{$matches[1]}_{$matches[2]}").($matches[3] ?? '')
-                );
-            },
-            \preg_replace('/Mail$/', '', \end($parts))
+        return strtolower(
+            preg_replace(
+                sprintf('#_%s$#', MailInterface::MAIL_CLASS_SUFFIX), // Remove _Mail from the end
+                '',
+                ltrim(preg_replace('#[A-Z]([A-Z](?![a-z]))*#', '_$0', end($parts)), '_')
+            )
         );
     }
 

@@ -6,6 +6,8 @@ use Ramsey\Uuid\UuidInterface;
 
 interface MailInterface
 {
+    public const MAIL_CLASS_SUFFIX = 'Mail';
+
     public function getApp(): string;
 
     /**
@@ -63,4 +65,6 @@ interface MailInterface
     public function chunk(int $size = -1): iterable;
 
     public function serialize(): string;
+
+    public static function generateTemplateName(): string;
 }

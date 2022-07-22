@@ -3,7 +3,6 @@
 namespace EnMarche\MailerBundle\Client\PayloadFactory;
 
 use EnMarche\MailerBundle\Client\MailRequestInterface;
-use EnMarche\MailerBundle\Client\PayloadFactoryInterface;
 
 abstract class AbstractPayloadFactory implements PayloadFactoryInterface
 {
@@ -14,6 +13,11 @@ abstract class AbstractPayloadFactory implements PayloadFactoryInterface
     {
         $this->senderEmail = $senderEmail;
         $this->senderName = $senderName;
+    }
+
+    public function getSendEndpoint(): string
+    {
+        return '';
     }
 
     public function getSenderEmail(MailRequestInterface $mailRequest): ?string
